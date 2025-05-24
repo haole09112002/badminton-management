@@ -3,7 +3,7 @@
     <span v-if="label !== ''" class="text-caption">{{ label }}</span>
     <div class="input-wrap">
       <v-text-field v-model="inputValue" :placeholder="placeholder" :variant="variant" :density="density"
-        :disabled="disabled" :readonly="readonly" :class="class" :hide-details="hideDetails" :suffix="suffix"
+        :disabled="disabled" :readonly="readonly" :class="inputClass" :hide-details="hideDetails" :suffix="suffix"
         :prefix="prefix" @blur="onBlur" @keydown="onKeydown" @focus="$emit('focus')" class="align-right" color="blue"
         :error="!!errorMessage" :error-messages="errorMessage" />
     </div>
@@ -24,7 +24,7 @@ interface Props {
   suffix?: string;
   prefix?: string;
   hideDetails?: boolean;
-  class?: string;
+  inputClass?: string;
   height?: string;
   errorMessage?: string;
 }

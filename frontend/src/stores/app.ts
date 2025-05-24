@@ -12,7 +12,7 @@ import type {
   PaymentRequest,
   ShuttlecockFeeRequest
 } from '../types/requests'
-import { BadmintonSession, BadmintonSessionWaringResponse, BadmintonTeamResponse, MemberBalance, PaginationResult } from '../types/responses'
+import { BadmintonSession, BadmintonSessionWaringResponse, BadmintonTeamResponse, MemberBalance, PaginationResult, PaymentResponse } from '../types/responses'
 
 export const useAppStore = defineStore('app', () => {
   // STATE

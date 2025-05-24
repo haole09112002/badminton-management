@@ -60,6 +60,7 @@ import { PaymentResponse } from '../types/responses';
 import { PaymentRequest } from '../types/requests';
 import { useAppStore } from '../stores/app'
 import { GROUP_ID } from '../constants/config'
+import { DataTableHeader } from 'vuetify';
 const appStore = useAppStore()
 
 const payments = ref<PaymentResponse[]>([]);
@@ -93,7 +94,7 @@ const statuses = [
   { title: 'Từ chối', value: 'rejected' },
 ];
 
-const headers = [
+const headers: DataTableHeader[] = [
   { title: 'Ngày thanh toán', key: 'date', align: 'start' },
   { title: 'Số tiền', key: 'amount', align: 'end' },
   { title: 'Ghi chú', key: 'note', align: 'start' },

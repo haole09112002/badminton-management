@@ -11,8 +11,6 @@ declare module 'vue' {
     AppFooter: typeof import('./components/AppFooter.vue')['default']
     AppHeader: typeof import('./components/AppHeader.vue')['default']
     DateInputPicker: typeof import('./components/DateInputPicker.vue')['default']
-    FormItem: typeof import('./components/FormItem.vue')['default']
-    Header: typeof import('./components/header.vue')['default']
     HelloWorld: typeof import('./components/HelloWorld.vue')['default']
     MoneyInputWithLabel: typeof import('./components/shared/MoneyInputWithLabel.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
@@ -20,7 +18,6 @@ declare module 'vue' {
     SessionItem: typeof import('./components/badmintonSession/SessionItem.vue')['default']
     StatusTag: typeof import('./components/shared/StatusTag.vue')['default']
     TextAreaWithLabel: typeof import('./components/TextAreaWithLabel.vue')['default']
-    TextFieldMoney: typeof import('./components/TextFieldMoney.vue')['default']
     TextFieldWithLabel: typeof import('./components/TextFieldWithLabel.vue')['default']
   }
 }

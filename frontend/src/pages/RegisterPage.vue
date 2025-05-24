@@ -28,7 +28,7 @@
 
 <script setup lang="ts">
 import { reactive, ref, computed } from 'vue';
-import api from '@/plugins/axios'; // Axios instance
+import api from '../plugins/axios'; // Axios instance
 
 const form = reactive({
   name: '',

@@ -64,7 +64,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useDisplay } from 'vuetify'
+import { DataTableHeader, useDisplay } from 'vuetify'
 import { GROUP_ID } from '../constants/config'
 import api from '../plugins/axios'
 import { useAppStore } from '../stores/app'
@@ -108,7 +108,7 @@ const tableData = computed(() =>
     sessionId: t.sessionId
   }))
 );
-const headers = [
+const headers: DataTableHeader[] = [
   { title: 'Số dư', key: 'balanceAfter', align: 'end' },
   { title: 'Biến động', key: 'delta', align: 'end' },
   { title: 'Lý do', key: 'reason', align: 'start' },

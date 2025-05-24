@@ -43,15 +43,15 @@
 
 // router/index.ts
 import { createRouter, createWebHistory } from 'vue-router'
-import BadmintonSessionDetail from '@/pages/BadmintonSessionDetail'
-import BadmintonSession from '@/pages/BadmintonSession'
-import HomePage from '@/pages/HomePage'
-import AppLayout from '@/layouts/AppLayout'
-import LoginPage from '@/pages/LoginPage'
+import BadmintonSessionDetail from '../pages/BadmintonSessionDetail.vue'
+import BadmintonSession from '../pages/BadmintonSession.vue'
+import HomePage from '../pages/HomePage.vue'
+import AppLayout from '../layouts/AppLayout.vue'
+import LoginPage from '../pages/LoginPage.vue'
 import RegisterPage from '../pages/RegisterPage.vue'
-import TransactionHistory from '@/pages/TransactionHistory'
-import PaymentList from '@/pages/PaymentList'
-import LogoutPage from '@/pages/LogoutPage'
+import TransactionHistory from '../pages/TransactionHistory.vue'
+import PaymentList from '../pages/PaymentList.vue'
+import LogoutPage from '../pages/LogoutPage.vue'
 
 const routes = [
   {

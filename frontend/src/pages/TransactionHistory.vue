@@ -59,9 +59,8 @@
 </template>
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import api from '@/plugins/axios'; // Axios instance
-import { formatDateVi } from '../utils';
+import { DataTableHeader } from 'vuetify';
+import api from '../plugins/axios'; // Axios instance
 import { Transaction } from '../types/responses';
 
 
@@ -97,7 +96,7 @@ const endDateError = computed(() => {
   if (!filters.value.startDate || !filters.value.endDate) return false;
   return new Date(filters.value.endDate) < new Date(filters.value.startDate);
 });
-const headers = [
+const headers: DataTableHeader[] = [
   { title: 'Số dư', key: 'balanceAfter', align: 'end' },
   { title: 'Biến động', key: 'delta', align: 'end' },
   { title: 'Lý do', key: 'reason', align: 'start' },

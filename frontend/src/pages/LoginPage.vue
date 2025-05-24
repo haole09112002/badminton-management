@@ -20,7 +20,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import api from '@/plugins/axios'; // Axios instance
+import api from '../plugins/axios'; // Axios instance
 const email = ref('');
 const password = ref('');
 const isFormValid = ref(false);
