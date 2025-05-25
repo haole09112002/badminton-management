@@ -33,8 +33,8 @@
             <MoneyInputWithLabel v-if="isCasualCourt" v-model="shuttlecockFee" label="Tiền cầu"
               :error-message="errors.shuttlecockFee" @focus="errors.shuttlecockFee = ''"
               :readonly="status === 'done' || status === 'confirmed' || !appStore.isLeadOrAdminPermission" />
-            <MoneyInputWithLabel v-if="isCasualCourt" v-model="numberShuttlecock" label="Số cầu"
-              :error-message="errors.numberShuttlecock" @focus="errors.numberShuttlecock = ''"
+            <TextFieldWithLabel v-if="isCasualCourt" v-model="numberShuttlecock" label="Số cầu"
+              :error-message="errors.numberShuttlecock" @focus="errors.numberShuttlecock = ''" type="number"
               :readonly="status === 'done' || status === 'confirmed' || !appStore.isLeadOrAdminPermission" />
           </div>
 
@@ -361,6 +361,7 @@ onMounted(async () => {
         note.value = badmintonSession.note ?? ""
         status.value = badmintonSession.status
         updateTime.value = new Date(badmintonSession.updateTime)
+        numberShuttlecock.value = badmintonSession.numberShuttlecock
         // participants.value = badmintonSession.participants
       }
       isLoading.value = false
