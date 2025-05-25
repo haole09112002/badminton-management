@@ -152,7 +152,8 @@ const form = ref<ShuttlecockFeeRequest>({
   note: ''
 })
 const isEnoughtGroupBalance = computed<Boolean>(() => {
-  return form.value.shuttlecockFee > (team.value ? team.value?.amount ?? 0 : 0);
+  console.log((team.value ? team.value?.amount ?? 0 : 0))
+  return form.value.shuttlecockFee <= (team.value ? team.value?.amount ?? 0 : 0);
 })
 const totalCount = ref(0);
 const page = ref(1);
