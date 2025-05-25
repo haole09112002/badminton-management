@@ -4,7 +4,7 @@ import { API_BASE_URL } from '../constants/config';
 const api = axios.create({
 
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -23,11 +23,11 @@ api.interceptors.response.use(
   async error => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 403 && !originalRequest._retry) {
+    if (error.response?.status === 403 || error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
-        const res = await axios.post('/auth/refreshToken', {}, { withCredentials: true });
+        const res = await api.post('/auth/refreshToken', {}, { withCredentials: true });
         const newToken = res.data.accessToken;
         localStorage.setItem('accessToken', newToken);
         api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;

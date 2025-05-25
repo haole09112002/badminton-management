@@ -25,27 +25,6 @@
           </v-list-item-content>
         </v-list-item>
 
-        <v-list-item>
-          <v-list-item-content>
-            <v-list-item-title><strong>Phí đã mua cầu:</strong> {{ formatCurrency(team.shuttlecockFee)
-            }}</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-
-        <v-list-item>
-          <v-list-item-content>
-            <v-list-item-title><strong>Phí sân cố định:</strong> {{ formatCurrency(team.fixedCourtFee)
-            }}</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-
-        <!-- <v-list-item>
-          <v-list-item-content>
-            <v-list-item-title><strong>Số tiền còn lại(ước tính):</strong> {{
-              formatCurrency(team.amount - team.shuttlecockFee - team.fixedCourtFee) }}</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item> -->
-
         <v-list-item v-if="team.note">
           <v-list-item-content>
             <v-list-item-title><strong>Ghi chú:</strong> {{ team.note }}</v-list-item-title>
@@ -74,8 +53,9 @@
       <!-- <v-btn color="primary" text @click="$emit('close')">Đóng</v-btn> -->
     </v-card-actions>
   </v-card>
-
-  <v-progress-circular indeterminate v-else class="mx-auto" />
+  <div v-else class="d-flex justify-center">
+    <v-progress-circular indeterminate class="mx-auto" />
+  </div>
 </template>
 
 <script setup lang="ts">

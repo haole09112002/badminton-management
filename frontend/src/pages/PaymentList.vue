@@ -14,8 +14,8 @@
     </v-row>
 
     <v-data-table-server :headers="headers" :items="payments" v-model:options="options" :items-length="totalItems"
-      :items-per-page-options="[5, 10, 20, 50]" @update:options="fetchPayments" density="compact" class="elevation-1"
-      show-current-page>
+      :loading="tableLoading" :items-per-page-options="[5, 10, 20, 50]" @update:options="fetchPayments" density="compact"
+      class="elevation-1" show-current-page>
       <template v-if="appStore.isLeadOrAdminPermission" #item.actions="{ item }">
         <v-btn :disabled="item.status === 'accepted'" color="success" size="small" @click="accept(item)" class="me-2"
           variant="outlined">
@@ -38,6 +38,10 @@
     <v-dialog v-model="dialogCreate" max-width="500px">
       <v-card>
         <v-card-title>Nạp tiền</v-card-title>
+        <v-card-text class="d-flex flex-column justify-center align-center">
+          <span class="text-caption">Quét mã chuyển khoản rồi nhập thông tin</span>
+          <Img :srcset="qr" class="qr-image"></Img>
+        </v-card-text>
         <v-card-text>
           <!-- Form tạo mới (ví dụ) -->
           <v-text-field v-model="form.amount" label="Số tiền" type="number" />
@@ -61,11 +65,14 @@ import { PaymentRequest } from '../types/requests';
 import { useAppStore } from '../stores/app'
 import { GROUP_ID } from '../constants/config'
 import { DataTableHeader } from 'vuetify';
+import qr from '@/assets/qr.jpg';
+
 const appStore = useAppStore()
 
 const payments = ref<PaymentResponse[]>([]);
 const total = ref(0);
 const dialogCreate = ref(false)
+const tableLoading = ref(false);
 const form = ref<PaymentRequest>({
   groupId: GROUP_ID,
   amount: 0,
@@ -109,20 +116,18 @@ const totalItems = ref(0);
 const fetchPayments = async () => {
   try {
     const { page, itemsPerPage } = options.value;
+    tableLoading.value = true
     const res = await appStore.getMyPayments({
       page: page,
       limit: itemsPerPage,
       status: filters.status,
     });
-    console.log("res: ", res)
     payments.value = res.data;
     totalItems.value = Number(res.pagination.total)
-    console.log('Page:', options.value.page);
-    console.log('Limit:', options.value.itemsPerPage);
-    console.log('Total:', totalItems.value);
-    console.log('Số dòng trả về:', payments.value.length);
+    tableLoading.value = false
   } catch (err) {
     console.error('Lỗi khi tải danh sách thanh toán', err);
+    tableLoading.value = false
   }
 };
 const openCreateDialog = () => {
@@ -195,3 +200,13 @@ onMounted(async () => {
   await fetchPayments();
 });
 </script>
+<style lang="scss" scoped>
+.qr-image {
+  max-width: 200px;
+  /* hoặc bạn set width cụ thể như 128px */
+  height: auto;
+  object-fit: contain;
+  /* không bị méo ảnh */
+  display: block;
+}
+</style>

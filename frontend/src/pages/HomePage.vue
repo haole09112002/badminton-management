@@ -1,8 +1,54 @@
 <template>
   <div class="summary pa-4">
-    <!-- Chi tiết team -->
-    <BadmintonTeamDetail :id="GROUP_ID" />
+    <v-card class="mx-auto" max-width="600" v-if="team" color="blue" variant="tonal">
+      <v-card-title>
+        <span class="headline">Chi tiết đội cầu lông</span>
+      </v-card-title>
+      <v-card-text>
+        <v-list dense>
+          <v-list-item>
+            <v-list-item-content>
+              <v-list-item-title><strong>Tên đội:</strong> {{ team.name }}</v-list-item-title>
+            </v-list-item-content>
+          </v-list-item>
+          <v-list-item>
+            <v-list-item-content>
+              <v-list-item-title><strong>Số tiền còn lại:</strong> {{
+                formatCurrency(team.amount) }}</v-list-item-title>
+            </v-list-item-content>
+          </v-list-item>
+          <v-list-item>
+            <v-list-item-content>
+              <v-list-item-title><strong>Số cầu còn lại:</strong> {{ team.numberShuttlecock }}</v-list-item-title>
+            </v-list-item-content>
+          </v-list-item>
 
+          <v-list-item v-if="team.note">
+            <v-list-item-content>
+              <v-list-item-title><strong>Ghi chú:</strong> {{ team.note }}</v-list-item-title>
+            </v-list-item-content>
+          </v-list-item>
+
+          <v-list-item>
+            <v-list-item-content>
+              <v-list-item-title><strong>Cập nhật bởi:</strong> {{ team.updateById?.name || 'Không rõ'
+              }}</v-list-item-title>
+            </v-list-item-content>
+          </v-list-item>
+
+          <v-list-item>
+            <v-list-item-content>
+              <v-list-item-title>
+                <strong>Cập nhật lúc:</strong> {{ formatDateTime(team.updateTime) }}
+              </v-list-item-title>
+            </v-list-item-content>
+          </v-list-item>
+        </v-list>
+      </v-card-text>
+    </v-card>
+    <div v-else class="d-flex justify-center">
+      <v-progress-circular indeterminate class="mx-auto" />
+    </div>
     <!-- Các nút hành động -->
     <div class="d-flex flex-column ga-3 mt-4 align-center" width="300">
       <v-btn :disabled="!appStore.isLeadOrAdminPermission" color="orange" @click="openCreateDialog" size="small"
@@ -14,8 +60,6 @@
         Thanh toán sân cố định
       </v-btn>
     </div>
-
-    <!-- Form tạo mới trong dialog -->
     <v-dialog v-model="dialogCreate" max-width="500px">
       <v-card>
         <v-card-title class="text-h6">Thanh toán tiền mua cầu</v-card-title>
@@ -32,8 +76,6 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-
-    <!-- Bảng lịch sử giao dịch -->
     <v-data-table class="mt-4" :headers="headers" :items="tableData" :items-per-page="limit" :page.sync="page"
       :server-items-length="totalCount" :loading="loading" density="compact" :mobile-breakpoint="0"
       @update:page="fetchTransactions">
@@ -70,15 +112,39 @@ import api from '../plugins/axios'
 import { useAppStore } from '../stores/app'
 import { ShuttlecockFeeRequest } from '../types/requests'
 import { Transaction } from '../types/responses'
-import BadmintonTeamDetail from './BadmintonTeamDetail.vue'
+import { BadmintonTeamResponse } from '../types/responses';
 
-const display = useDisplay()
+const emit = defineEmits(['close'])
+
+const team = ref<BadmintonTeamResponse>()
+
+const fetchTeam = async () => {
+  try {
+    const res = await appStore.getBadmintonTeamById(GROUP_ID)
+    team.value = res
+  } catch (error) {
+    console.error('Lỗi khi tải thông tin team:', error)
+  }
+}
+
+const formatCurrency = (value: number) => {
+  if (typeof value !== 'number') return ''
+  return value.toLocaleString('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+  })
+}
+
+const formatDateTime = (date: string | Date) => {
+  if (!date) return ''
+  return new Date(date).toLocaleString('vi-VN', {
+    hour12: false,
+  })
+}
 const appStore = useAppStore()
 const router = useRouter()
-const route = useRoute()
-const totalAmount = ref<number>(0)
-const totalNotOfficalAmount = ref<number>(0)
 const dialogCreate = ref(false)
+const isLoading = ref(false)
 const form = ref<ShuttlecockFeeRequest>({
   groupId: GROUP_ID,
   shuttlecockFee: 0,
@@ -86,7 +152,7 @@ const form = ref<ShuttlecockFeeRequest>({
   note: ''
 })
 const isEnoughtGroupBalance = computed<Boolean>(() => {
-  return form.value.shuttlecockFee < 6;
+  return form.value.shuttlecockFee > (team.value ? team.value?.amount ?? 0 : 0);
 })
 const totalCount = ref(0);
 const page = ref(1);
@@ -117,14 +183,11 @@ const headers: DataTableHeader[] = [
 
 onMounted(async () => {
   try {
-    await appStore.getUserProfile()
-    fetchTransactions();
-    const memberBalances = await appStore.getAllMemberBalance()
-    totalAmount.value = memberBalances.reduce((acc, curr) => acc + curr.balance, 0)
-    totalNotOfficalAmount.value = memberBalances.reduce((acc, curr) => acc + curr.statusAmounts.pending, 0)
-
-    // badmintonSessionList.value = await appStore.getAllBadmintonSession()
+    isLoading.value = true
+    await Promise.all([appStore.getUserProfile(), fetchTransactions(), fetchTeam()])
+    isLoading.value = false
   } catch (error) {
+    isLoading.value = false
     console.log(error)
   }
 })
@@ -138,10 +201,8 @@ const handleCreate = async () => {
     return
   }
   try {
-    console.log("tesststst")
     await appStore.payForShuttlecockFee(form.value)
     dialogCreate.value = false
-
   } catch (error: any) {
     alert(error.response?.data?.message || error.message || 'Tạo payment thất bại')
   }
@@ -163,9 +224,7 @@ const redirectToCreateSession = () => {
 
 const fetchTransactions = async () => {
   loading.value = true;
-
-  // Chuẩn bị params
-  const params: any = { // Thay thành memberId thực tế của user, có thể lấy từ context hoặc store
+  const params: any = {
     groupId: GROUP_ID,
     page: page.value,
     limit,

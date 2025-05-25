@@ -7,15 +7,17 @@
       </v-btn>
       <v-divider :thickness="2" color="success" class="mt-4 mb-4 border-opacity-100"></v-divider>
     </div>
+    <div v-if="!isLoading">
+      <div v-if="!smAndUp" class="d-block">
+        <SessionItem class="mb-4" v-for="session in badmintonSessionList" :item="session" :key="session.id" />
+      </div>
 
-
-
-    <div v-if="!smAndUp" class="d-block">
-      <SessionItem class="mb-4" v-for="session in badmintonSessionList" :item="session" :key="session.id" />
+      <div v-else class="session-list d-sm-flex flex-wrap ga-4">
+        <SessionItem v-for="session in badmintonSessionList" :item="session" :key="session.id" />
+      </div>
     </div>
-
-    <div v-else class="session-list d-sm-flex flex-wrap ga-4">
-      <SessionItem v-for="session in badmintonSessionList" :item="session" :key="session.id" />
+    <div v-if="isLoading" class="loading-overlay">
+      <v-progress-circular indeterminate color="black" size="30"></v-progress-circular>
     </div>
   </div>
 </template>
@@ -26,25 +28,20 @@ import { useRouter } from 'vue-router'
 import { useDisplay } from 'vuetify'
 import { useAppStore } from '../stores/app'
 import { BadmintonSession } from '../types/responses'
-import { formatCurrency } from '../utils'
 
 const { smAndUp } = useDisplay()
 
 const appStore = useAppStore()
 const router = useRouter()
-const route = useRoute()
-const totalAmount = ref<number>(0)
-const totalNotOfficalAmount = ref<number>(0)
 const badmintonSessionList = ref<BadmintonSession[]>([])
-const isCreatePage = computed(() => route.name === 'BadmintonSessionCreate')
+const isLoading = ref<boolean>(false)
 onMounted(async () => {
   try {
-    const memberBalances = await appStore.getAllMemberBalance()
-    totalAmount.value = memberBalances.reduce((acc, curr) => acc + curr.balance, 0)
-    totalNotOfficalAmount.value = memberBalances.reduce((acc, curr) => acc + curr.statusAmounts.pending, 0)
-
+    isLoading.value = true
     badmintonSessionList.value = await appStore.getAllBadmintonSession()
+    isLoading.value = false
   } catch (error) {
+    isLoading.value = false
     console.log(error)
   }
 })
@@ -65,15 +62,6 @@ const handleCreateNewSession = (): void => {
   flex-direction: column;
 }
 
-/* Hiển thị grid cho màn hình lớn */
-// .session-list {
-//   display: grid;
-//   grid-template-columns: repeat(3, 1fr);
-//   grid-template-rows: repeat(2, auto);
-//   gap: 10px;
-// }
-
-/* Chỉ hiển thị session-list dạng grid trên màn hình lớn */
 .d-sm-grid {
   display: grid !important;
 }
@@ -92,6 +80,20 @@ const handleCreateNewSession = (): void => {
 .session-list-mobile>* {
   margin-bottom: 8px;
   /* Khoảng cách giữa các mục */
+}
+
+.loading-overlay {
+  // position: absolute;
+  // top: 0;
+  // left: 0;
+  width: 100%;
+  height: 100%;
+  // background: rgba(0, 0, 0, 0.3); // nền mờ
+  min-height: 100px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10; // nhớ cao hơn nội dung bên trong
 }
 
 /* Ẩn phần list trên các màn hình lớn */
