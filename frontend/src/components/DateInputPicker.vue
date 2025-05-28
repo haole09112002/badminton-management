@@ -7,7 +7,8 @@
 
     <!-- MENU ──────────────────────────────────────────── -->
     <div class="wrap-menu">
-      <v-menu v-model="menu" :disabled="disabled" :close-on-content-click="false" transition="scale-transition" offset-y>
+      <v-menu v-model="menu" :disabled="disabled" transition="scale-transition" offset-y :close-on-content-click="false"
+        @click:outside="menu = false">
         <!-- ACTIVATOR (input) -->
         <template #activator="{ props }">
           <div class="wrap-input">
@@ -19,8 +20,13 @@
 
         <!-- DATE-PICKER -->
         <v-locale-provider locale="vi">
-          <v-date-picker v-model="internalDate" :multiple="multiple" hide-header color="blue" :elevation="2"
-            @update:model-value="onDateSelected" />
+          <v-date-picker v-model="internalDate" :multiple="multiple" hide-header color="blue" :elevation="2" persistent
+            @update:model-value="onDateSelected" :show-current="true" show-adjacent-months>
+            <template #actions>
+              <v-btn text @click="menu = false">Đóng</v-btn>
+
+            </template>
+          </v-date-picker>
         </v-locale-provider>
       </v-menu>
     </div>
@@ -31,6 +37,7 @@
 import { ref, watch } from 'vue'
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
+import { formatDates } from '../utils';
 
 /** ────── Props */
 interface Props {
@@ -76,10 +83,6 @@ function formatDateVi(date: Date) {
   return format(date, 'dd/MM/yyyy', { locale: vi })
 }
 
-/* chuyển array date → chuỗi hiển thị */
-function formatDates(dates: Date[]): string {
-  return dates.map(d => formatDateVi(d)).join(', ')
-}
 
 /** ────── Watch prop từ cha */
 watch(

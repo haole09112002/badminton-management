@@ -77,3 +77,8 @@ export const splitFeeEvenlyInt = (total: number, count: number): number[] => {
 
   return result;
 }
+
+/* chuyển array date → chuỗi hiển thị */
+export const formatDates = (dates: Date[]): string => {
+  return dates.map(d => formatDateVi(d)).join(', ')
+}

@@ -163,7 +163,7 @@
                   ${formatCurrency(totalAmount)}` }}</span>
         <span v-show="!isValidAccBalance" class="text-red">Có thành viên không đủ số dư</span>
         <v-btn v-if="!status && appStore.isLeadOrAdminPermission" :disabled="status !== undefined" density="compact"
-          elevation="4" @click="handleCreate">
+          elevation="4" @click="handleCheckCreate">
           Tạo
         </v-btn>
         <v-btn v-else :disabled="status === 'confirmed'" density="compact" elevation="4" @click="handleEdit">
@@ -190,6 +190,32 @@
     <div v-if="isLoading" class="loading-overlay">
       <v-progress-circular indeterminate color="black" size="64"></v-progress-circular>
     </div>
+    <v-dialog v-model="dialogCreate" max-width="500px">
+      <v-card>
+        <v-card-title>Bạn có chắc chắn muốn tạo sân cố định</v-card-title>
+        <v-card-text class="d-flex flex-column">
+          <span>
+            Sân: {{ location }}
+          </span>
+          <span>
+            Các ngày: {{ Array.isArray(dateModel) ? formatDates(dateModel) : formatDateVi(dateModel) }}
+          </span>
+          <span>
+            Thời gian: {{ startTime }} - {{ endTime }}
+          </span>
+          <span>
+            Sẽ trừ vào tài khoản của nhóm: <span class="text-blue font-weight-bold">{{ formatCurrency(totalAmount)
+            }}</span>
+          </span>
+        </v-card-text>
+
+        <v-card-actions>
+          <v-spacer />
+          <v-btn text @click="dialogCreate = false">Hủy</v-btn>
+          <v-btn color="primary" @click="handleCreate">Lưu</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -202,7 +228,9 @@ import { useAppStore } from '../stores/app'
 import { Member } from '../types';
 import { BadmintonSessionRequest, ParticipantRequest } from '../types/requests'
 import { Participant } from '../types/responses';
-import { formatCurrency, getStatusCf, parseISOToDate, splitFeeEvenlyInt } from '../utils'
+import { formatCurrency, getStatusCf, splitFeeEvenlyInt, formatDateVi, formatDates } from '../utils'
+
+const dialogCreate = ref<boolean>(false);
 const courtType = ref<"fixed" | "casual">('fixed');
 const appStore = useAppStore()
 const route = useRoute()
@@ -312,7 +340,6 @@ onMounted(async () => {
   try {
     isLoading.value = true
     if (isCreateMode) {
-
       const members = await appStore.fetchAllMembers()
       if (members && members.length > 0) {
         const allParticipants = members.map(m => {
@@ -404,58 +431,65 @@ function validateForm(): boolean {
   }
   return valid;
 }
-
-const handleCreate = async (): Promise<void> => {
-  if (validateForm()) {
-    const listParticipantsRequest: ParticipantRequest[] = participants.value
-      .filter(p => p.isCourtFeeApplied || p.isExtraFeeApplied || p.isShuttlecockFeeApplied || p.modifiedFee !== 0)
-      .map(p => ({
-        memberId: p.memberId,
-        isCourtFeeApplied: p.isCourtFeeApplied,
-        isShuttlecockFeeApplied: p.isShuttlecockFeeApplied,
-        isExtraFeeApplied: p.isExtraFeeApplied,
-        courtFee: p.courtFee,
-        shuttlecockFee: p.shuttlecockFee,
-        extraFee: p.extraFee,
-        modifiedFee: p.modifiedFee
-      }));
-
-    const param: BadmintonSessionRequest = {
-      courtType: courtType.value,
-      dateList: Array.isArray(dateModel.value)
-        ? dateModel.value.filter((d): d is Date => d !== null).map(d => new Date(d))
-        : dateModel.value !== null
-          ? [new Date(dateModel.value)]
-          : [],
-      startTime: startTime.value,
-      endTime: endTime.value,
-      location: location.value,
-      courtFee: courtFee.value,
-      shuttlecockFee: shuttlecockFee.value,
-      participants: listParticipantsRequest,
-      extraFee: extraFee.value,
-      note: note.value,
-      groupId: GROUP_ID,
-      numberShuttlecock: numberShuttlecock.value
-    }
-    try {
-      isLoading.value = true
-      const createdSession = await appStore.createBadmintonSession(param);
-      isLoading.value = false
-      if (param.courtType === 'fixed') {
-        router.push({ name: "BadmintonSession" })
-      }
-      if (createdSession && createdSession._id) {
-        status.value = createdSession?.status
-        updateTime.value = new Date(createdSession.updateTime)
-        navigationToDetailPage(createdSession._id)
-      }
-    } catch (error) {
-      isLoading.value = false
-      console.log(error)
-    }
+const handleCheckCreate = async (): Promise<void> => {
+  if (!validateForm()) {
+    return;
   }
+  if (isCreateMode && courtType.value === 'fixed' && !dialogCreate.value) {
+    dialogCreate.value = true;
+  } else {
+    await handleCreate();
+  }
+}
+const handleCreate = async (): Promise<void> => {
+  const listParticipantsRequest: ParticipantRequest[] = participants.value
+    .filter(p => p.isCourtFeeApplied || p.isExtraFeeApplied || p.isShuttlecockFeeApplied || p.modifiedFee !== 0)
+    .map(p => ({
+      memberId: p.memberId,
+      isCourtFeeApplied: p.isCourtFeeApplied,
+      isShuttlecockFeeApplied: p.isShuttlecockFeeApplied,
+      isExtraFeeApplied: p.isExtraFeeApplied,
+      courtFee: p.courtFee,
+      shuttlecockFee: p.shuttlecockFee,
+      extraFee: p.extraFee,
+      modifiedFee: p.modifiedFee
+    }));
 
+  const param: BadmintonSessionRequest = {
+    courtType: courtType.value,
+    dateList: Array.isArray(dateModel.value)
+      ? dateModel.value.filter((d): d is Date => d !== null).map(d => new Date(d))
+      : dateModel.value !== null
+        ? [new Date(dateModel.value)]
+        : [],
+    startTime: startTime.value,
+    endTime: endTime.value,
+    location: location.value,
+    courtFee: courtFee.value,
+    shuttlecockFee: shuttlecockFee.value,
+    participants: listParticipantsRequest,
+    extraFee: extraFee.value,
+    note: note.value,
+    groupId: GROUP_ID,
+    numberShuttlecock: numberShuttlecock.value
+  }
+  try {
+    isLoading.value = true
+    const createdSession = await appStore.createBadmintonSession(param);
+    isLoading.value = false
+    dialogCreate.value = false
+    if (param.courtType === 'fixed') {
+      router.push({ name: "BadmintonSession" })
+    }
+    if (createdSession && createdSession._id) {
+      status.value = createdSession?.status
+      updateTime.value = new Date(createdSession.updateTime)
+      navigationToDetailPage(createdSession._id)
+    }
+  } catch (error) {
+    isLoading.value = false
+    console.log(error)
+  }
 }
 
 const handleEdit = async (): Promise<void> => {

@@ -63,10 +63,11 @@
     <v-dialog v-model="dialogCreate" max-width="500px">
       <v-card>
         <v-card-title class="text-h6">Thanh toán tiền mua cầu</v-card-title>
-        <v-card-text>
+        <v-card-text class="d-flex flex-column">
           <v-text-field v-model="form.shuttlecockFee" label="Số tiền" type="number" density="compact" />
           <v-text-field v-model="form.numberShuttlecock" label="Số cầu" type="number" density="compact" />
           <v-text-field v-model="form.note" label="Ghi chú" density="compact" />
+          <span class="text-caption text-blue">Tiền cầu sẽ trừ vào tiền nhóm</span>
           <span v-if="!isEnoughtGroupBalance" class="text-caption text-red">Nhóm không đủ số dư</span>
         </v-card-text>
         <v-card-actions>
@@ -247,9 +248,18 @@ const handleCreate = async () => {
     return
   }
   try {
+    isLoading.value = true
     await appStore.payForShuttlecockFee(form.value)
     dialogCreate.value = false
+    try {
+      await Promise.all([fetchTransactions(), fetchTeam(), fetchAllMemberBalance()])
+      isLoading.value = false
+    } catch (error) {
+      isLoading.value = false
+      console.log(error)
+    }
   } catch (error: any) {
+    isLoading.value = false
     alert(error.response?.data?.message || error.message || 'Tạo payment thất bại')
   }
 }
