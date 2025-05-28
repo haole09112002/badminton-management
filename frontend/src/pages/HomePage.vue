@@ -7,41 +7,41 @@
       <v-card-text>
         <v-list dense>
           <v-list-item>
-            <v-list-item-content>
+            <v-list-item>
               <v-list-item-title><strong>Tên đội:</strong> {{ team.name }}</v-list-item-title>
-            </v-list-item-content>
+            </v-list-item>
           </v-list-item>
           <v-list-item>
-            <v-list-item-content>
+            <v-list-item>
               <v-list-item-title><strong>Số tiền còn lại:</strong> {{
                 formatCurrency(team.amount) }}</v-list-item-title>
-            </v-list-item-content>
+            </v-list-item>
           </v-list-item>
           <v-list-item>
-            <v-list-item-content>
+            <v-list-item>
               <v-list-item-title><strong>Số cầu còn lại:</strong> {{ team.numberShuttlecock }}</v-list-item-title>
-            </v-list-item-content>
+            </v-list-item>
           </v-list-item>
 
           <v-list-item v-if="team.note">
-            <v-list-item-content>
+            <v-list-item>
               <v-list-item-title><strong>Ghi chú:</strong> {{ team.note }}</v-list-item-title>
-            </v-list-item-content>
+            </v-list-item>
           </v-list-item>
 
           <v-list-item>
-            <v-list-item-content>
+            <v-list-item>
               <v-list-item-title><strong>Cập nhật bởi:</strong> {{ team.updateById?.name || 'Không rõ'
               }}</v-list-item-title>
-            </v-list-item-content>
+            </v-list-item>
           </v-list-item>
 
           <v-list-item>
-            <v-list-item-content>
+            <v-list-item>
               <v-list-item-title>
                 <strong>Cập nhật lúc:</strong> {{ formatDateTime(team.updateTime) }}
               </v-list-item-title>
-            </v-list-item-content>
+            </v-list-item>
           </v-list-item>
         </v-list>
       </v-card-text>
@@ -79,6 +79,11 @@
     <v-data-table class="mt-4" :headers="headers" :items="tableData" :items-per-page="limit" :page.sync="page"
       :server-items-length="totalCount" :loading="loading" density="compact" :mobile-breakpoint="0"
       @update:page="fetchTransactions">
+      <template #top>
+        <div class="d-flex justify-center align-center px-4 py-2">
+          <h3 class="text-h6">Biến động số dư của nhóm</h3>
+        </div>
+      </template>
       <template #item.delta="{ item }">
         <span :style="{ color: item.delta > 0 ? 'green' : 'red' }">
           {{ item.delta > 0 ? '+' : '' }}{{ item.delta.toLocaleString() }}
@@ -101,6 +106,39 @@
         {{ item.createdAt }}
       </template>
     </v-data-table>
+    <v-data-table class="mt-4" :headers="memberSeaders" :items="members" :loading="loading" density="compact"
+      :mobile-breakpoint="0" hide-default-footer>
+      <!-- <template v-slot:loading>
+        <v-skeleton-loader type="table-row@5" density="compact"></v-skeleton-loader>
+      </template> -->
+      <template #top>
+        <div class="d-flex justify-center align-center px-4 py-2">
+          <h3 class="text-h6">Danh sách thành viên</h3>
+        </div>
+      </template>
+      <template #item.no="{ index, item }">
+        <span>
+          {{ index + 1 }}
+        </span>
+      </template>
+      <template #item.balance="{ item }">
+        <span :style="{ color: item.balance > 0 ? 'green' : 'red' }">
+          {{ formatCurrency(item.balance) }}
+        </span>
+      </template>
+      <template #bottom>
+        <div class="d-flex justify-center mt-2">
+          <div class="font-weight-bold">
+            Tổng số dư: {{ formatCurrency(totalBalance) }}
+          </div>
+        </div>
+      </template>
+    </v-data-table>
+    <!-- <div class="d-flex justify-center mt-2">
+      <div class="font-weight-bold">
+        Tổng số dư: {{ formatCurrency(totalBalance) }}
+      </div>
+    </div> -->
   </div>
 </template>
 <script setup lang="ts">
@@ -110,6 +148,7 @@ import { DataTableHeader, useDisplay } from 'vuetify'
 import { GROUP_ID } from '../constants/config'
 import api from '../plugins/axios'
 import { useAppStore } from '../stores/app'
+import { Member } from '../types'
 import { ShuttlecockFeeRequest } from '../types/requests'
 import { Transaction } from '../types/responses'
 import { BadmintonTeamResponse } from '../types/responses';
@@ -117,7 +156,7 @@ import { BadmintonTeamResponse } from '../types/responses';
 const emit = defineEmits(['close'])
 
 const team = ref<BadmintonTeamResponse>()
-
+const members = ref<Member[]>([])
 const fetchTeam = async () => {
   try {
     const res = await appStore.getBadmintonTeamById(GROUP_ID)
@@ -159,7 +198,9 @@ const totalCount = ref(0);
 const page = ref(1);
 const limit = 10;
 const loading = ref(false);
-
+const totalBalance = computed(() => {
+  return members.value.reduce((sum: number, member: Member) => sum + (member.balance ?? 0), 0);
+});
 const filters = ref({
   startDate: '',
   endDate: ''
@@ -181,11 +222,15 @@ const headers: DataTableHeader[] = [
   { title: 'Lý do', key: 'reason', align: 'start' },
   { title: 'Thời gian', key: 'createdAt', align: 'start' },
 ];
-
+const memberSeaders: DataTableHeader[] = [
+  { title: 'STT', key: 'no', align: 'start' },
+  { title: 'Tên', key: 'name', align: 'start' },
+  { title: 'Số dư', key: 'balance', align: 'start' },
+];
 onMounted(async () => {
   try {
     isLoading.value = true
-    await Promise.all([appStore.getUserProfile(), fetchTransactions(), fetchTeam()])
+    await Promise.all([appStore.getUserProfile(), fetchTransactions(), fetchTeam(), fetchAllMemberBalance()])
     isLoading.value = false
   } catch (error) {
     isLoading.value = false
@@ -209,6 +254,14 @@ const handleCreate = async () => {
   }
 }
 
+const fetchAllMemberBalance = async () => {
+  try {
+    const res = await appStore.fetchAllMembers()
+    members.value = res
+  } catch (error) {
+    console.error('Lỗi khi tải thông tin member:', error)
+  }
+}
 const openCreateDialog = () => {
   form.value = {
     ...form.value,
@@ -237,9 +290,6 @@ const fetchTransactions = async () => {
     const res = await api.get('/transactions/groups', { params });
     const data = res.data;
     transactions.value = data.transactions;
-
-    console.log('transactions:', transactions.value);
-
     totalCount.value = data.totalCount;
   } catch (err) {
     console.error(err);

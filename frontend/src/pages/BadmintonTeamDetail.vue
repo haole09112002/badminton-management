@@ -7,43 +7,43 @@
     <v-card-text>
       <v-list dense>
         <v-list-item>
-          <v-list-item-content>
+          <v-list-item>
             <v-list-item-title><strong>Tên đội:</strong> {{ team.name }}</v-list-item-title>
-          </v-list-item-content>
+          </v-list-item>
         </v-list-item>
 
         <v-list-item>
-          <v-list-item-content>
+          <v-list-item>
             <v-list-item-title><strong>Số tiền còn lại:</strong> {{
               formatCurrency(team.amount) }}</v-list-item-title>
-          </v-list-item-content>
+          </v-list-item>
         </v-list-item>
 
         <v-list-item>
-          <v-list-item-content>
+          <v-list-item>
             <v-list-item-title><strong>Số cầu còn lại:</strong> {{ team.numberShuttlecock }}</v-list-item-title>
-          </v-list-item-content>
+          </v-list-item>
         </v-list-item>
 
         <v-list-item v-if="team.note">
-          <v-list-item-content>
+          <v-list-item>
             <v-list-item-title><strong>Ghi chú:</strong> {{ team.note }}</v-list-item-title>
-          </v-list-item-content>
+          </v-list-item>
         </v-list-item>
 
         <v-list-item>
-          <v-list-item-content>
+          <v-list-item>
             <v-list-item-title><strong>Cập nhật bởi:</strong> {{ team.updateById?.name || 'Không rõ'
             }}</v-list-item-title>
-          </v-list-item-content>
+          </v-list-item>
         </v-list-item>
 
         <v-list-item>
-          <v-list-item-content>
+          <v-list-item>
             <v-list-item-title>
               <strong>Cập nhật lúc:</strong> {{ formatDateTime(team.updateTime) }}
             </v-list-item-title>
-          </v-list-item-content>
+          </v-list-item>
         </v-list-item>
       </v-list>
     </v-card-text>

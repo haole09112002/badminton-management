@@ -202,14 +202,13 @@ import { useAppStore } from '../stores/app'
 import { Member } from '../types';
 import { BadmintonSessionRequest, ParticipantRequest } from '../types/requests'
 import { Participant } from '../types/responses';
-import { formatCurrency, getStatusCf, parseISOToDate } from '../utils'
+import { formatCurrency, getStatusCf, parseISOToDate, splitFeeEvenlyInt } from '../utils'
 const courtType = ref<"fixed" | "casual">('fixed');
 const appStore = useAppStore()
 const route = useRoute()
 const router = useRouter()
 const isValidAccBalance = ref<boolean>(true)
 const numberShuttlecock = ref<number>(0)
-const dateTime = ref<Date | null>(new Date);
 const startTime = ref<string>("");
 const endTime = ref<string>("");
 const updateTime = ref<Date>();
@@ -264,26 +263,29 @@ const grandTotal = computed(() => {
     return sum + calculateTotalFee(p);
   }, 0);
 });
-const isCreateMode = route.name === 'BadmintonSessionCreate'
+const isCreateMode = (route.name === 'BadmintonSessionCreate' && (route.params.id as string) !== '')
 const isCasualCourt = computed(() => courtType.value === 'casual' || !isCreateMode)
 const handleCheckboxChange = () => {
   const courtFeeApplied = participants.value.filter(p => p.isCourtFeeApplied);
   const shuttlecockFeeApplied = participants.value.filter(p => p.isShuttlecockFeeApplied);
   const extraFeeApplied = participants.value.filter(p => p.isExtraFeeApplied);
   let numberValidAccBalance = 0;
+  let courtIndex = 0;
+  let shuttleIndex = 0;
+  let extraIndex = 0;
+
+  const courtFeeList = splitFeeEvenlyInt(courtFee.value, courtFeeApplied.length);
+  const shuttlecockFeeList = splitFeeEvenlyInt(shuttlecockFee.value, shuttlecockFeeApplied.length);
+  const extraFeeList = splitFeeEvenlyInt(extraFee.value, extraFeeApplied.length);
   const updatedParticipants = participants.value.map((participant) => {
-    const courtFeePerPerson = participant.isCourtFeeApplied && courtFeeApplied.length > 0
-      ? courtFee.value / courtFeeApplied.length
+    const courtFeePerPerson = participant.isCourtFeeApplied ? courtFeeList[courtIndex++]
       : 0;
 
-    const shuttlecockFeePer = participant.isShuttlecockFeeApplied && shuttlecockFeeApplied.length > 0
-      ? shuttlecockFee.value / shuttlecockFeeApplied.length
+    const shuttlecockFeePer = participant.isShuttlecockFeeApplied ? shuttlecockFeeList[shuttleIndex++]
       : 0;
 
-    const extraFeePer = participant.isExtraFeeApplied && extraFeeApplied.length > 0
-      ? extraFee.value / extraFeeApplied.length
+    const extraFeePer = participant.isExtraFeeApplied ? extraFeeList[extraIndex++]
       : 0;
-    console.log(calculateTotalFee(participant))
     // const isChargeAcc = participant.isCourtFeeApplied || participant.isExtraFeeApplied || participant.isShuttlecockFeeApplied || participant.modifiedFee > 0;
     if (courtFeePerPerson + shuttlecockFeePer + extraFeePer + participant.modifiedFee <= participant.balance) {
       numberValidAccBalance += 1
@@ -295,8 +297,6 @@ const handleCheckboxChange = () => {
       extraFee: extraFeePer,
     };
   });
-  console.log(numberValidAccBalance)
-  console.log(participants.value.length)
   if (numberValidAccBalance === participants.value.length) {
     isValidAccBalance.value = true
   } else {
@@ -347,8 +347,6 @@ onMounted(async () => {
           participants.value = [...badmintonSession.participants]
         }
 
-        console.log(typeof badmintonSession.time)
-        console.log(badmintonSession.time)
         courtType.value = badmintonSession.courtType
         selectedDate.value = new Date(badmintonSession.time)
         // dateTime.value = new Date(badmintonSession.time)
@@ -368,7 +366,6 @@ onMounted(async () => {
     }
   } catch (error) {
     console.log(error);
-
   }
 })
 function validateForm(): boolean {
@@ -387,24 +384,6 @@ function validateForm(): boolean {
   }
 
   let valid = true;
-  console.log(courtType.value === 'fixed')
-  console.log(Array.isArray(dateModel.value))
-  console.log(Array.isArray(dateModel.value) && dateModel.value.length === 0)
-  // if (courtType.value === 'fixed' && !Array.isArray(dateModel.value) || (Array.isArray(dateModel.value) && dateModel.value.length === 0)) {
-  //   errors.value.time = 'Vui lòng chọn ngày';
-  //   valid = false;
-  // }
-
-  // if (courtType.value !== 'fixed' && !selectedDate.value) {
-  //   errors.value.time = 'Vui lòng chọn ngày2';
-  //   valid = false;
-  // }
-
-  // if (!dateModel.value || dateModel.value) {
-  //   errors.value.time = 'Vui lòng chọn ngày';
-  //   valid = false;
-  // }
-
   if (!location.value || location.value.trim() === '') {
     errors.value.location = 'Vui lòng nhập tên sân';
     valid = false;
@@ -419,27 +398,10 @@ function validateForm(): boolean {
     errors.value.endTime = 'Vui lòng chọn giờ kết thúc';
     valid = false;
   }
-
-  // if (courtFee.value == null) {
-  //   errors.value.courtFee = 'Vui lòng nhập phí sân';
-  //   valid = false;
-  // }
-
-  // if (shuttlecockFee.value == null) {
-  //   errors.value.shuttlecockFee = 'Vui lòng nhập phí cầu';
-  //   valid = false;
-  // }
-
-  // if (extraFee.value == null) {
-  //   errors.value.extraFee = 'Vui lòng nhập phí khác (0 nếu không có)';
-  //   valid = false;
-  // }
-
-  // if (!participants.value || participants.value.length === 0) {
-  //   errors.value.participants = 'Vui lòng chọn người tham gia';
-  //   valid = false;
-  // }
-
+  if (!dateModel.value || (courtType.value === 'fixed' ? ((dateModel.value as Date[]).length <= 0) : false)) {
+    errors.value.time = 'Vui lòng chọn ngày';
+    valid = false;
+  }
   return valid;
 }
 
@@ -476,7 +438,6 @@ const handleCreate = async (): Promise<void> => {
       groupId: GROUP_ID,
       numberShuttlecock: numberShuttlecock.value
     }
-    console.log(JSON.stringify(param))
     try {
       isLoading.value = true
       const createdSession = await appStore.createBadmintonSession(param);
@@ -498,7 +459,6 @@ const handleCreate = async (): Promise<void> => {
 }
 
 const handleEdit = async (): Promise<void> => {
-  console.log("EDIt")
   if (!validateForm()) {
     return
   }
@@ -534,7 +494,6 @@ const handleEdit = async (): Promise<void> => {
     numberShuttlecock: numberShuttlecock.value
   }
   try {
-    console.log(sessionId.value)
     isLoading.value = true
     const createdSession = await appStore.updateBadmintonSession(sessionId.value, param);
     if (createdSession.session._id) {
@@ -556,7 +515,6 @@ const handleEdit = async (): Promise<void> => {
 }
 
 const handleConfirm = async (): Promise<void> => {
-  console.log("handleConfirm")
   if (!validateForm()) {
     return
   }
@@ -613,7 +571,6 @@ const handleConfirm = async (): Promise<void> => {
 }
 
 const handlePay = async (): Promise<void> => {
-  console.log("handlePay")
   try {
     isLoading.value = true
     const createdSession = await appStore.payBadmintonSession(sessionId.value);

@@ -25,7 +25,7 @@ export const useAppStore = defineStore('app', () => {
   })
 
   // ACTIONS
-  async function fetchAllMembers(): Promise<Member[] | null> {
+  async function fetchAllMembers(): Promise<Member[]> {
     const response = await api.get<ApiResponse<Member[]>>('/members')
     return response.data.data
   }

@@ -40,7 +40,7 @@
         <v-card-title>Nạp tiền</v-card-title>
         <v-card-text class="d-flex flex-column justify-center align-center">
           <span class="text-caption">Quét mã chuyển khoản rồi nhập thông tin</span>
-          <Img :srcset="qr" class="qr-image"></Img>
+          <img :srcset="qr" class="qr-image" />
         </v-card-text>
         <v-card-text>
           <!-- Form tạo mới (ví dụ) -->

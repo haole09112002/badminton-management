@@ -41,7 +41,7 @@
 
     <!-- Nội dung chính -->
     <v-main class="pa-4 overflow-y-auto" :style="{ marginLeft: display.smAndUp.value ? '240px' : '0', height: '100vh' }">
-      <router-view />
+      <router-view :key="$route.fullPath" />
     </v-main>
   </v-app>
 </template>

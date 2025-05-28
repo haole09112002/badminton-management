@@ -117,9 +117,6 @@ const fetchTransactions = async () => {
     const res = await api.get('/transactions/me', { params });
     const data = res.data;
     transactions.value = data.transactions;
-
-    console.log('transactions:', transactions.value);
-
     totalCount.value = data.totalCount;
   } catch (err) {
     console.error(err);
