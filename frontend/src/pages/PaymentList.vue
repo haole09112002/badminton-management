@@ -70,7 +70,6 @@ import qr from '@/assets/qr.jpg';
 const appStore = useAppStore()
 
 const payments = ref<PaymentResponse[]>([]);
-const total = ref(0);
 const dialogCreate = ref(false)
 const tableLoading = ref(false);
 const form = ref<PaymentRequest>({
@@ -78,10 +77,6 @@ const form = ref<PaymentRequest>({
   amount: 0,
   note: ''
 })
-const pagination = reactive({
-  page: 1,
-  limit: 5,
-});
 
 const options = ref({
   page: 1,
@@ -109,9 +104,6 @@ const headers: DataTableHeader[] = [
   { title: 'Hành động', key: 'actions', sortable: false }
 ];
 
-const pageCount = computed(() =>
-  Math.ceil(total.value / pagination.limit)
-);
 const totalItems = ref(0);
 const fetchPayments = async () => {
   try {
@@ -197,7 +189,7 @@ const getStatusText = (status: string) => {
   }
 };
 onMounted(async () => {
-  await fetchPayments();
+  // await fetchPayments();
 });
 </script>
 <style lang="scss" scoped>

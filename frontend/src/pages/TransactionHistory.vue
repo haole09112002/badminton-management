@@ -32,9 +32,9 @@
       </v-row>
     </v-card>
 
-    <v-data-table :headers="headers" :items="tableData" :items-per-page="limit" :page.sync="page" density="compact"
-      :server-items-length="totalCount" :loading="loading" @update:page="fetchTransactions">
-
+    <v-data-table-server :headers="headers" :items="tableData" density="compact" :items-length="totalCount"
+      :items-per-page-options="[10, 20, 50]" @update:options="fetchTransactions" v-model:options="options"
+      :loading="loading">
       <template #item.delta="{ item }">
         <span :style="{ color: item.delta > 0 ? 'green' : 'red' }">
           {{ item.delta > 0 ? '+' : '' }}{{ item.delta.toLocaleString() }}
@@ -54,7 +54,7 @@
       <template #item.createdAt="{ item }">
         {{ item.createdAt }}
       </template>
-    </v-data-table>
+    </v-data-table-server>
   </v-container>
 </template>
 <script setup lang="ts">
@@ -63,6 +63,12 @@ import { DataTableHeader } from 'vuetify';
 import api from '../plugins/axios'; // Axios instance
 import { Transaction } from '../types/responses';
 
+const options = ref({
+  page: 1,
+  itemsPerPage: 10,
+  sortBy: [],
+  sortDesc: []
+});
 
 const transactions = ref<Transaction[]>([]);
 const tableData = computed(() =>
@@ -76,8 +82,6 @@ const tableData = computed(() =>
   }))
 );
 const totalCount = ref(0);
-const page = ref(1);
-const limit = 10;
 const loading = ref(false);
 
 const filters = ref({
@@ -107,8 +111,8 @@ const fetchTransactions = async () => {
 
   // Chuẩn bị params
   const params: any = { // Thay thành memberId thực tế của user, có thể lấy từ context hoặc store
-    page: page.value,
-    limit,
+    page: options.value.page,
+    limit: options.value.itemsPerPage,
   };
   if (filters.value.startDate) params.startDate = filters.value.startDate;
   if (filters.value.endDate) params.endDate = filters.value.endDate;
@@ -127,7 +131,7 @@ const fetchTransactions = async () => {
 };
 
 onMounted(() => {
-  fetchTransactions();
+  // fetchTransactions();
 });
 </script>
 <style lang="scss" scoped>

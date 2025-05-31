@@ -53,6 +53,7 @@ const handleLogin = async () => {
 
     const data = res.data;
     localStorage.setItem('accessToken', data.accessToken);
+    localStorage.setItem('refreshToken', data.refreshToken);
     router.push('/home');
   } catch (err: any) {
     alert(err.response?.data?.message || err.message || 'Đăng nhập thất bại');

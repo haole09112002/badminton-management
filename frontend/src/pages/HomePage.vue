@@ -19,7 +19,8 @@
           </v-list-item>
           <v-list-item>
             <v-list-item>
-              <v-list-item-title><strong>Số cầu còn lại:</strong> {{ team.numberShuttlecock }}</v-list-item-title>
+              <v-list-item-title><strong>Số cầu còn lại:</strong> {{ team.numberShuttlecock }} ({{
+                formatCurrency(team.shuttlecockFee / team.numberShuttlecock) }} / 1 quả)</v-list-item-title>
             </v-list-item>
           </v-list-item>
 
@@ -77,9 +78,9 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <v-data-table class="mt-4" :headers="headers" :items="tableData" :items-per-page="limit" :page.sync="page"
-      :server-items-length="totalCount" :loading="loading" density="compact" :mobile-breakpoint="0"
-      @update:page="fetchTransactions">
+    <v-data-table-server class="mt-4" :headers="headers" :items="tableData" :items-length="totalCount" :loading="loading"
+      density="compact" :mobile-breakpoint="0" v-model:options="options" :items-per-page-options="[5, 10, 20, 50]"
+      show-current-page @update:options="fetchTransactions">
       <template #top>
         <div class="d-flex justify-center align-center px-4 py-2">
           <h3 class="text-h6">Biến động số dư của nhóm</h3>
@@ -106,7 +107,7 @@
       <template #item.createdAt="{ item }">
         {{ item.createdAt }}
       </template>
-    </v-data-table>
+    </v-data-table-server>
     <v-data-table class="mt-4" :headers="memberSeaders" :items="members" :loading="loading" density="compact"
       :mobile-breakpoint="0" hide-default-footer>
       <!-- <template v-slot:loading>
@@ -155,7 +156,12 @@ import { Transaction } from '../types/responses'
 import { BadmintonTeamResponse } from '../types/responses';
 
 const emit = defineEmits(['close'])
-
+const options = ref({
+  page: 1,
+  itemsPerPage: 10,
+  sortBy: [],
+  sortDesc: []
+});
 const team = ref<BadmintonTeamResponse>()
 const members = ref<Member[]>([])
 const fetchTeam = async () => {
@@ -196,8 +202,6 @@ const isEnoughtGroupBalance = computed<Boolean>(() => {
   return form.value.shuttlecockFee <= (team.value ? team.value?.amount ?? 0 : 0);
 })
 const totalCount = ref(0);
-const page = ref(1);
-const limit = 10;
 const loading = ref(false);
 const totalBalance = computed(() => {
   return members.value.reduce((sum: number, member: Member) => sum + (member.balance ?? 0), 0);
@@ -231,7 +235,7 @@ const memberSeaders: DataTableHeader[] = [
 onMounted(async () => {
   try {
     isLoading.value = true
-    await Promise.all([appStore.getUserProfile(), fetchTransactions(), fetchTeam(), fetchAllMemberBalance()])
+    await Promise.all([appStore.getUserProfile(), fetchTeam(), fetchAllMemberBalance()])
     isLoading.value = false
   } catch (error) {
     isLoading.value = false
@@ -290,8 +294,8 @@ const fetchTransactions = async () => {
   loading.value = true;
   const params: any = {
     groupId: GROUP_ID,
-    page: page.value,
-    limit,
+    page: options.value.page,
+    limit: options.value.itemsPerPage,
   };
   if (filters.value.startDate) params.startDate = filters.value.startDate;
   if (filters.value.endDate) params.endDate = filters.value.endDate;
@@ -301,6 +305,7 @@ const fetchTransactions = async () => {
     const data = res.data;
     transactions.value = data.transactions;
     totalCount.value = data.totalCount;
+    console.log(data.totalCount)
   } catch (err) {
     console.error(err);
     // Xử lý lỗi nếu cần

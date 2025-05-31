@@ -29,8 +29,10 @@
           <!-- Tiền sân và cầu -->
           <div class="info-row">
             <MoneyInputWithLabel v-model="courtFee" :label="courtType === 'fixed' ? 'Tổng tiền đặt cố định' : 'Tiền sân'"
-              :readonly="status === 'done' || status === 'confirmed' || (courtType === 'fixed' && !isCreateMode)" />
-            <MoneyInputWithLabel v-if="isCasualCourt" v-model="shuttlecockFee" label="Tiền cầu"
+              :readonly="status === 'done' || status === 'confirmed' || (courtType === 'fixed' && !isCreateMode)"
+              :error-message="errors.courtFee" @focus="errors.courtFee = ''" />
+            <MoneyInputWithLabel v-if="isCasualCourt" v-model="shuttlecockFee"
+              :label="`Tổng tiền cầu (${formatCurrency((team?.shuttlecockFee ?? 0) / (team?.numberShuttlecock ?? 1))}/ 1 quả)`"
               :error-message="errors.shuttlecockFee" @focus="errors.shuttlecockFee = ''"
               :readonly="status === 'done' || status === 'confirmed' || !appStore.isLeadOrAdminPermission" />
             <TextFieldWithLabel v-if="isCasualCourt" v-model="numberShuttlecock" label="Số cầu"
@@ -227,7 +229,7 @@ import { GROUP_ID } from '../constants/config';
 import { useAppStore } from '../stores/app'
 import { Member } from '../types';
 import { BadmintonSessionRequest, ParticipantRequest } from '../types/requests'
-import { Participant } from '../types/responses';
+import { BadmintonTeamResponse, Participant } from '../types/responses';
 import { formatCurrency, getStatusCf, splitFeeEvenlyInt, formatDateVi, formatDates } from '../utils'
 
 const dialogCreate = ref<boolean>(false);
@@ -340,7 +342,7 @@ onMounted(async () => {
   try {
     isLoading.value = true
     if (isCreateMode) {
-      const members = await appStore.fetchAllMembers()
+      const [members] = await Promise.all([appStore.fetchAllMembers(), fetchTeam()])
       if (members && members.length > 0) {
         const allParticipants = members.map(m => {
           return {
@@ -366,6 +368,7 @@ onMounted(async () => {
       const [members, badmintonSession] = await Promise.all([
         appStore.fetchAllMembers(),
         appStore.getBadmintonSession(sessionId.value),
+        fetchTeam()
       ])
       if (badmintonSession) {
         if (members && members.length > 0 && badmintonSession.status !== 'confirmed' && badmintonSession.status !== "done") {
@@ -429,6 +432,25 @@ function validateForm(): boolean {
     errors.value.time = 'Vui lòng chọn ngày';
     valid = false;
   }
+  if (courtType.value === 'fixed' && (team.value?.amount ?? 0) < courtFee.value) {
+    errors.value.courtFee = "Tiền sân vượt quá tiền đang có của nhóm"
+    valid = false;
+  }
+  return valid;
+}
+
+function validateFormForConfirm(): boolean {
+  let valid = true;
+
+  if ((team.value?.numberShuttlecock ?? 0) < numberShuttlecock.value) {
+    errors.value.numberShuttlecock = "Số lượng cầu của nhóm không đủ"
+    valid = false
+  }
+  if ((team.value?.shuttlecockFee ?? 0) < shuttlecockFee.value) {
+    errors.value.shuttlecockFee = "Số tượng tiền cầu của nhóm không đủ"
+    valid = false
+  }
+
   return valid;
 }
 const handleCheckCreate = async (): Promise<void> => {
@@ -606,6 +628,7 @@ const handleConfirm = async (): Promise<void> => {
 
 const handlePay = async (): Promise<void> => {
   try {
+
     isLoading.value = true
     const createdSession = await appStore.payBadmintonSession(sessionId.value);
     if (createdSession && createdSession._id) {
@@ -653,6 +676,17 @@ function mergeMembersWithParticipants(
 const navigationToDetailPage = (id: string) => {
   router.push({ name: 'BadmintonSessionDetail', params: { id: id } })
 }
+
+const team = ref<BadmintonTeamResponse>()
+const fetchTeam = async () => {
+  try {
+    const res = await appStore.getBadmintonTeamById(GROUP_ID)
+    team.value = res
+  } catch (error) {
+    console.error('Lỗi khi tải thông tin team:', error)
+  }
+}
+
 </script>
 
 <style lang="scss" scoped>
