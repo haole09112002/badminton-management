@@ -40,7 +40,7 @@
         <v-card-title>Nạp tiền</v-card-title>
         <v-card-text class="d-flex flex-column justify-center align-center">
           <span class="text-caption">Quét mã chuyển khoản rồi nhập thông tin</span>
-          <img :srcset="qr" class="qr-image" />
+          <img :srcset="PAYMENT_QR_URL" class="qr-image" />
         </v-card-text>
         <v-card-text>
           <!-- Form tạo mới (ví dụ) -->
@@ -63,9 +63,8 @@ import { ref, reactive, computed, onMounted } from 'vue';
 import { PaymentResponse } from '../types/responses';
 import { PaymentRequest } from '../types/requests';
 import { useAppStore } from '../stores/app'
-import { GROUP_ID } from '../constants/config'
+import { GROUP_ID, PAYMENT_QR_URL } from '../constants/config'
 import { DataTableHeader } from 'vuetify';
-import qr from '@/assets/qr.jpg';
 
 const appStore = useAppStore()
 
