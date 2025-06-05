@@ -114,7 +114,7 @@ const getStatusCf = (status: string) => {
       }
     case "edited":
       return {
-        text: "Chờ thanh toán",
+        text: "Chờ xác nhận",
         color: "orange" // cảnh báo nhẹ, cần hành động
       }
     case "confirmed":
@@ -140,7 +140,7 @@ const handleClickSessionDetail = () => {
 }
 
 </script>
-<style lang="scss"  scoped>
+<style lang="scss" scoped>
 .price-container {
   display: flex;
   flex-direction: column;

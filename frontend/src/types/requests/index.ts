@@ -13,6 +13,16 @@ export interface BadmintonSessionRequest {
   numberShuttlecock: number
 }
 
+export interface SubParticipant {
+  name: string;
+  isCourtFeeApplied: boolean;
+  isShuttlecockFeeApplied: boolean;
+  isExtraFeeApplied: boolean;
+  courtFee: number;
+  shuttlecockFee: number;
+  extraFee: number;
+}
+
 export interface ParticipantRequest {
   memberId: string
   isCourtFeeApplied: boolean
@@ -22,6 +32,7 @@ export interface ParticipantRequest {
   shuttlecockFee: number
   extraFee: number
   modifiedFee: number
+  participants: SubParticipant[]
 }
 
 export interface PaymentRequest {

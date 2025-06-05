@@ -28,7 +28,8 @@
 
           <!-- Tiền sân và cầu -->
           <div class="info-row">
-            <MoneyInputWithLabel v-model="courtFee" :label="courtType === 'fixed' ? 'Tổng tiền đặt cố định' : 'Tiền sân'"
+            <MoneyInputWithLabel v-model="courtFee"
+              :label="courtType === 'fixed' ? (isCreateMode ? 'Tổng tiền đặt cố định' : 'Tiên sân cố định') : 'Tiền sân'"
               :readonly="status === 'done' || status === 'confirmed' || (courtType === 'fixed' && !isCreateMode)"
               :error-message="errors.courtFee" @focus="errors.courtFee = ''" />
             <MoneyInputWithLabel v-if="isCasualCourt" v-model="shuttlecockFee"
@@ -91,78 +92,160 @@
             <th class="text-left">
               Tổng
             </th>
+            <th v-if="isCasualCourt && status !== 'done' && status !== 'confirmed'" class="text-left">
+              Thao tác
+            </th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(participant, index) in participants" :key="participant.memberId" class="bg-gray">
-            <td data-label="STT" class="text-left">{{ index + 1 }} </td>
-            <td class="text-left" data-label="Tên">
-              <div class="d-flex flex-column">
-                <span class="text-body-2">{{ participant.name }}</span>
-                <span v-if="status !== 'done'"> Số dư: <span
-                    :class="[calculateTotalFee(participant) <= participant.balance ? 'text-green' : 'text-red', 'text-caption']">{{
-                      formatCurrency(participant.balance) }}</span></span>
-              </div>
-
-            </td>
-            <td data-label="Tính tiền sân">
-              <v-checkbox v-model="participant.isCourtFeeApplied" @change="handleCheckboxChange()" density="compact"
-                hide-details color="blue"
-                :readonly="status === 'done' || status === 'confirmed' || (appStore.user?.id !== participant.memberId && !appStore.isLeadOrAdminPermission)"></v-checkbox>
-            </td>
-            <td v-if="isCasualCourt" data-label="Tính tiền cầu">
-              <v-checkbox v-model="participant.isShuttlecockFeeApplied" color="blue" @change="handleCheckboxChange()"
-                density="compact" hide-details
-                :readonly="status === 'done' || status === 'confirmed' || (appStore.user?.id !== participant.memberId && !appStore.isLeadOrAdminPermission)"></v-checkbox>
-            </td>
-            <td v-if="isCasualCourt" data-label="Tính tiền khác">
-              <v-checkbox v-model="participant.isExtraFeeApplied" color="blue" @change="handleCheckboxChange()"
-                :ripple="false" density="compact" hide-details
-                :readonly="status === 'done' || status === 'confirmed' || (appStore.user?.id !== participant.memberId && !appStore.isLeadOrAdminPermission)"></v-checkbox>
-            </td>
-            <td class="text-right font-weight-bold" data-label="Tiền sân">
-              <span :class="participant.courtFee == 0 ? 'text-grey-lighten-1' : ''"> {{
-                formatCurrency(participant.courtFee) }}</span>
-
-            </td>
-            <td class="text-right" data-label="Tiền cầu">
-              <span :class="participant.shuttlecockFee == 0 ? 'text-grey-lighten-1' : ''">
-                {{ formatCurrency(participant.shuttlecockFee) }}
-              </span>
-            </td>
-            <td v-if="isCasualCourt" class="text-center" data-label="Tiền khác">
-              <span :class="participant.extraFee == 0 ? 'text-grey-lighten-1' : ''">
-                {{ formatCurrency(participant.extraFee) }}
-              </span>
-            </td>
-            <td v-if="isCasualCourt" class="text-left" data-label="Tiền điều chỉnh">
-              <MoneyInputWithLabel v-model="participant.modifiedFee" :hide-details="true"
-                :readonly="status === 'done' || status === 'confirmed' || (appStore.user?.id !== participant.memberId && !appStore.isLeadOrAdminPermission)" />
-              <!-- <TextFieldWithLabel v-model="participant.modifiedFee" label="" :inputWidth="'100px'" /> -->
-            </td>
-            <td v-if="isCasualCourt" class="text-left">{{ formatCurrency(calculateTotalFee(participant)) }}</td>
-          </tr>
+          <template v-for="(participant, index) in participants" :key="participant.memberId">
+            <tr class="bg-gray">
+              <td data-label="STT" class="text-left">{{ index + 1 }}</td>
+              <td class="text-left" data-label="Tên">
+                <div class="d-flex flex-column">
+                  <span class="text-body-2">{{ participant.name }}</span>
+                  <span v-if="status !== 'done'" class="text-caption"> Số dư: <span
+                      :class="[calculateAllTotalFee(participant) <= participant.balance ? 'text-green' : 'text-red', 'text-caption']">{{
+                        formatCurrency(participant.balance) }}</span></span>
+                </div>
+              </td>
+              <td data-label="Tính tiền sân">
+                <v-checkbox v-model="participant.isCourtFeeApplied" @change="handleCheckboxChange()" density="compact"
+                  hide-details color="blue"
+                  :readonly="status === 'done' || status === 'confirmed' || (appStore.user?.id !== participant.memberId && !appStore.isLeadOrAdminPermission)"></v-checkbox>
+              </td>
+              <td v-if="isCasualCourt" data-label="Tính tiền cầu">
+                <v-checkbox v-model="participant.isShuttlecockFeeApplied" color="blue" @change="handleCheckboxChange()"
+                  density="compact" hide-details
+                  :readonly="status === 'done' || status === 'confirmed' || (appStore.user?.id !== participant.memberId && !appStore.isLeadOrAdminPermission)"></v-checkbox>
+              </td>
+              <td v-if="isCasualCourt" data-label="Tính tiền khác">
+                <v-checkbox v-model="participant.isExtraFeeApplied" color="blue" @change="handleCheckboxChange()"
+                  :ripple="false" density="compact" hide-details
+                  :readonly="status === 'done' || status === 'confirmed' || (appStore.user?.id !== participant.memberId && !appStore.isLeadOrAdminPermission)"></v-checkbox>
+              </td>
+              <td class="text-right font-weight-bold" data-label="Tiền sân">
+                <span :class="participant.courtFee == 0 ? 'text-grey-lighten-1' : ''">
+                  {{ formatCurrency(participant.courtFee) }}
+                </span>
+              </td>
+              <td v-if="isCasualCourt" class="text-right" data-label="Tiền cầu">
+                <span :class="participant.shuttlecockFee == 0 ? 'text-grey-lighten-1' : ''">
+                  {{ formatCurrency(participant.shuttlecockFee) }}
+                </span>
+              </td>
+              <td v-if="isCasualCourt" class="text-center" data-label="Tiền khác">
+                <span :class="participant.extraFee == 0 ? 'text-grey-lighten-1' : ''">
+                  {{ formatCurrency(participant.extraFee) }}
+                </span>
+              </td>
+              <td v-if="isCasualCourt" class="text-left" data-label="Tiền điều chỉnh">
+                <MoneyInputWithLabel v-model="participant.modifiedFee" :hide-details="true"
+                  :readonly="status === 'done' || status === 'confirmed' || (appStore.user?.id !== participant.memberId && !appStore.isLeadOrAdminPermission)" />
+              </td>
+              <td class="text-left" data-label="Tổng">
+                {{ formatCurrency(calculateTotalFee(participant)) }}
+              </td>
+              <td v-if="isCasualCourt && status !== 'done' && status !== 'confirmed'" class="text-left"
+                data-label="Thao tác">
+                <div class="d-flex gap-2">
+                  <v-btn text="Thêm vãng lai" class="text-none" color="primary" size="small" variant="text" border slim
+                    @click="addNewCasualParticipant(participant.memberId)"></v-btn>
+                </div>
+              </td>
+            </tr>
+          </template>
+          <!-- Sub-rows section -->
+          <template v-for="[memberId, rows] in Array.from(expandedRows)" :key="memberId">
+            <template v-for="(subRow, index) in rows" :key="subRow.memberId">
+              <tr class="bg-gray sub-row">
+                <td data-label="STT" class="text-left">
+                  <div class="d-flex align-center">
+                    <div class="d-flex flex-column">
+                      <div class="d-flex">
+                        <v-icon size="small" class="mr-2">mdi-subdirectory-arrow-right</v-icon>
+                        <span>{{ String(getMainRowIndex(memberId) + 1) }}.{{ String(index + 1) }}</span>
+                      </div>
+                      <span class="text-caption text-black">{{participants.find(p => p.memberId ===
+                        memberId)?.name}}</span>
+                    </div>
+                  </div>
+                </td>
+                <td class="text-left" data-label="Tên">
+                  <TextFieldWithLabel v-if="status !== 'done' && status !== 'confirmed'" v-model="subRow.name"
+                    :hide-details="true" label="Tên vãng lai" />
+                  <span v-else class="text-caption">Vãng lai: <span class=" text-black">{{ subRow.name }}</span></span>
+                </td>
+                <td data-label="Tính tiền sân">
+                  <v-checkbox v-model="subRow.isCourtFeeApplied" density="compact" hide-details color="blue"
+                    :readonly="status === 'done' || status === 'confirmed' || !appStore.isLeadOrAdminPermission"
+                    @update:model-value="handleCheckboxChange"></v-checkbox>
+                </td>
+                <td v-if="isCasualCourt" data-label="Tính tiền cầu">
+                  <v-checkbox v-model="subRow.isShuttlecockFeeApplied" density="compact" hide-details color="blue"
+                    :readonly="status === 'done' || status === 'confirmed' || !appStore.isLeadOrAdminPermission"
+                    @update:model-value="handleCheckboxChange"></v-checkbox>
+                </td>
+                <td v-if="isCasualCourt" data-label="Tính tiền khác">
+                  <v-checkbox v-model="subRow.isExtraFeeApplied" density="compact" hide-details color="blue"
+                    :readonly="status === 'done' || status === 'confirmed' || !appStore.isLeadOrAdminPermission"
+                    @update:model-value="handleCheckboxChange"></v-checkbox>
+                </td>
+                <td class="text-right font-weight-bold" data-label="Tiền sân">
+                  <span :class="subRow.courtFee == 0 ? 'text-grey-lighten-1' : ''">
+                    {{ formatCurrency(subRow.courtFee) }}
+                  </span>
+                </td>
+                <td v-if="isCasualCourt" class="text-right" data-label="Tiền cầu">
+                  <span :class="subRow.shuttlecockFee == 0 ? 'text-grey-lighten-1' : ''">
+                    {{ formatCurrency(subRow.shuttlecockFee) }}
+                  </span>
+                </td>
+                <td v-if="isCasualCourt" class="text-center" data-label="Tiền khác">
+                  <span :class="subRow.extraFee == 0 ? 'text-grey-lighten-1' : ''">
+                    {{ formatCurrency(subRow.extraFee) }}
+                  </span>
+                </td>
+                <td v-if="isCasualCourt" class="text-left" data-label="Tiền điều chỉnh">
+                  <MoneyInputWithLabel v-model="subRow.modifiedFee" :hide-details="true" :disabled="true" />
+                </td>
+                <td class="text-left" data-label="Tổng">
+                  {{ formatCurrency(calculateTotalFee(subRow)) }}
+                </td>
+                <td v-if="isCasualCourt && status !== 'done' && status !== 'confirmed'" class="text-left"
+                  data-label="Thao tác">
+                  <v-btn icon="mdi-delete" size="small" color="error" variant="text" density="compact"
+                    @click="removeNewParticipant(memberId, subRow.memberId)"></v-btn>
+                </td>
+              </tr>
+            </template>
+          </template>
         </tbody>
-        <tfoot v-if="isCasualCourt">
+        <tfoot>
           <tr>
-            <td colspan="9" class="text-center font-weight-bold">Tổng cộng tạm tính</td>
+            <td :colspan="isCasualCourt ? 9 : 4" class="text-center font-weight-bold">Tổng cộng tạm tính</td>
             <td class="text-left font-weight-bold">{{ formatCurrency(grandTotal) }}</td>
+            <td v-if="isCasualCourt && (status !== 'done' && status !== 'confirmed')"
+              class="text-left font-weight-bold">
+            </td>
           </tr>
         </tfoot>
       </v-table>
+
       <div class="action">
         <div>
           <span>Cập nhật lúc: {{ updateTime?.toLocaleString() ?? "./." }}</span>
-
         </div>
       </div>
       <div class="action" v-show="status !== 'done'">
-
         <span class="text-red" v-show="grandTotal < totalAmount && status">{{ `Tiền tạm tính
           ${formatCurrency(grandTotal)} không thể
-                  bé
-                  hơn tiền tổng
-                  ${formatCurrency(totalAmount)}` }}</span>
+          bé
+          hơn tiền tổng
+          ${formatCurrency(totalAmount)}` }}</span>
+        <div v-if="errors.participants" class="text-red text-caption mt-2">
+          {{ errors.participants }}
+        </div>
         <span v-show="!isValidAccBalance" class="text-red">Có thành viên không đủ số dư</span>
         <v-btn v-if="!status && appStore.isLeadOrAdminPermission" :disabled="status !== undefined" density="compact"
           elevation="4" @click="handleCheckCreate">
@@ -172,7 +255,7 @@
           Cập nhật
         </v-btn>
         <v-btn v-if="appStore.isLeadOrAdminPermission" :disabled="status !== 'edited' || grandTotal < totalAmount"
-          density="compact" elevation="4" @click="handleConfirm">
+          density="compact" elevation="4" @click="dialogConfirm = true">
           Xác nhận
         </v-btn>
         <v-btn v-if="appStore.isLeadOrAdminPermission"
@@ -210,11 +293,28 @@
             }}</span>
           </span>
         </v-card-text>
-
         <v-card-actions>
           <v-spacer />
           <v-btn text @click="dialogCreate = false">Hủy</v-btn>
           <v-btn color="primary" @click="handleCreate">Lưu</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <!-- Add confirmation dialog -->
+    <v-dialog v-model="dialogConfirm" max-width="500px">
+      <v-card>
+        <v-card-title class="text-h5">Xác nhận</v-card-title>
+        <v-card-text>
+          Nếu bạn "xác nhận" thì sẽ không còn chỉnh sửa được nữa. Bạn muốn tiếp tục?
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="grey-darken-1" variant="text" @click="dialogConfirm = false">
+            Hủy
+          </v-btn>
+          <v-btn color="primary" variant="text" @click="handleConfirm">
+            Tiếp tục
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -223,16 +323,30 @@
 
 <script setup lang="ts">
 // import TextFieldWithLabel from '@/components/TextFieldWithLabel.vue';
-import { ref } from 'vue'
+import { ref, computed, watch, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
 import { GROUP_ID } from '../constants/config';
 import { useAppStore } from '../stores/app'
 import { Member } from '../types';
 import { BadmintonSessionRequest, ParticipantRequest } from '../types/requests'
 import { BadmintonTeamResponse, Participant } from '../types/responses';
-import { formatCurrency, getStatusCf, splitFeeEvenlyInt, formatDateVi, formatDates } from '../utils'
+import { formatCurrency, getStatusCf, formatDateVi, formatDates } from '../utils'
+
+interface SubParticipant {
+  memberId: string;
+  name: string;
+  isCourtFeeApplied: boolean;
+  isShuttlecockFeeApplied: boolean;
+  isExtraFeeApplied: boolean;
+  courtFee: number;
+  shuttlecockFee: number;
+  extraFee: number;
+  modifiedFee: number;
+  balance: number;
+}
 
 const dialogCreate = ref<boolean>(false);
+const dialogConfirm = ref<boolean>(false);
 const courtType = ref<"fixed" | "casual">('fixed');
 const appStore = useAppStore()
 const route = useRoute()
@@ -289,53 +403,166 @@ watch(totalAmount, (newValue, oldValue) => {
 })
 
 const grandTotal = computed(() => {
-  return participants.value.reduce((sum, p) => {
+  // Tính tổng từ participants hiện tại
+  const participantsTotal = participants.value.reduce((sum, p) => {
     return sum + calculateTotalFee(p);
   }, 0);
+
+  // Tính tổng từ tất cả các expandedRows
+  const expandedRowsTotal = Array.from(expandedRows.value.values()).reduce((sum, rows) => {
+    return sum + rows.reduce((rowSum, p) => rowSum + calculateTotalFee(p), 0);
+  }, 0);
+
+  return participantsTotal + expandedRowsTotal;
 });
 const isCreateMode = (route.name === 'BadmintonSessionCreate' && (route.params.id as string) !== '')
 const isCasualCourt = computed(() => courtType.value === 'casual' || !isCreateMode)
-const handleCheckboxChange = () => {
-  const courtFeeApplied = participants.value.filter(p => p.isCourtFeeApplied);
-  const shuttlecockFeeApplied = participants.value.filter(p => p.isShuttlecockFeeApplied);
-  const extraFeeApplied = participants.value.filter(p => p.isExtraFeeApplied);
-  let numberValidAccBalance = 0;
-  let courtIndex = 0;
-  let shuttleIndex = 0;
-  let extraIndex = 0;
 
+// Gom tất cả participant và sub-row lại
+const getAllParticipants = () => {
+  const all: (Participant | SubParticipant)[] = [...participants.value];
+  expandedRows.value.forEach(rows => {
+    all.push(...rows);
+  });
+  return all;
+};
+
+// Hàm chia đều tiền (giữ lại logic cũ)
+function splitFeeEvenlyInt(total: number, count: number): number[] {
+  if (count === 0) return [];
+  const base = Math.floor(total / count);
+  const remainder = total % count;
+  return Array.from({ length: count }, (_, i) => base + (i < remainder ? 1 : 0));
+}
+
+// Hàm cập nhật tiền cho từng người
+function updateAllFees() {
+  const all = getAllParticipants();
+
+  // Lọc ra những người được tính từng loại phí
+  const courtFeeApplied = all.filter(p => p.isCourtFeeApplied);
+  const shuttlecockFeeApplied = all.filter(p => p.isShuttlecockFeeApplied);
+  const extraFeeApplied = all.filter(p => p.isExtraFeeApplied);
+
+  // Chia đều
   const courtFeeList = splitFeeEvenlyInt(courtFee.value, courtFeeApplied.length);
   const shuttlecockFeeList = splitFeeEvenlyInt(shuttlecockFee.value, shuttlecockFeeApplied.length);
   const extraFeeList = splitFeeEvenlyInt(extraFee.value, extraFeeApplied.length);
-  const updatedParticipants = participants.value.map((participant) => {
-    const courtFeePerPerson = participant.isCourtFeeApplied ? courtFeeList[courtIndex++]
-      : 0;
 
-    const shuttlecockFeePer = participant.isShuttlecockFeeApplied ? shuttlecockFeeList[shuttleIndex++]
-      : 0;
+  // Gán lại cho từng người
+  courtFeeApplied.forEach((p, i) => p.courtFee = courtFeeList[i]);
+  shuttlecockFeeApplied.forEach((p, i) => p.shuttlecockFee = shuttlecockFeeList[i]);
+  extraFeeApplied.forEach((p, i) => p.extraFee = extraFeeList[i]);
 
-    const extraFeePer = participant.isExtraFeeApplied ? extraFeeList[extraIndex++]
-      : 0;
-    // const isChargeAcc = participant.isCourtFeeApplied || participant.isExtraFeeApplied || participant.isShuttlecockFeeApplied || participant.modifiedFee > 0;
-    if (courtFeePerPerson + shuttlecockFeePer + extraFeePer + participant.modifiedFee <= participant.balance) {
-      numberValidAccBalance += 1
-    }
-    return {
-      ...participant,
-      courtFee: courtFeePerPerson,
-      shuttlecockFee: shuttlecockFeePer,
-      extraFee: extraFeePer,
-    };
+  // Những người không được tính thì set = 0
+  all.forEach(p => {
+    if (!p.isCourtFeeApplied) p.courtFee = 0;
+    if (!p.isShuttlecockFeeApplied) p.shuttlecockFee = 0;
+    if (!p.isExtraFeeApplied) p.extraFee = 0;
   });
-  if (numberValidAccBalance === participants.value.length) {
-    isValidAccBalance.value = true
-  } else {
-    isValidAccBalance.value = false
-  }
-  participants.value = updatedParticipants;
+}
+
+// Gọi lại hàm này mỗi khi thay đổi checkbox hoặc số tiền
+const handleCheckboxChange = () => {
+  updateAllFees();
 };
-const calculateTotalFee = (participant: Participant) => {
+
+const calculateTotalFee = (participant: Participant | SubParticipant) => {
   return Number(participant.courtFee) + Number(participant.shuttlecockFee) + Number(participant.extraFee) + Number(participant.modifiedFee);
+};
+const calculateAllTotalFee = (participant: Participant | SubParticipant) => {
+  const mainParticipantFee = calculateTotalFee(participant);
+
+  // Calculate total fee for all sub-participants of this main participant
+  const subParticipantsFee = (expandedRows.value.get(participant.memberId) || [])
+    .reduce((sum, sub) => sum + calculateTotalFee(sub), 0);
+
+  return mainParticipantFee + subParticipantsFee;
+};
+const newParticipants = ref<Map<string, Participant>>(new Map());
+
+const getNewParticipant = (memberId: string) => {
+  if (!newParticipants.value.has(memberId)) {
+    newParticipants.value.set(memberId, {
+      memberId: '',
+      name: '',
+      isCourtFeeApplied: false,
+      isShuttlecockFeeApplied: false,
+      isExtraFeeApplied: false,
+      courtFee: 0,
+      shuttlecockFee: 0,
+      extraFee: 0,
+      modifiedFee: 0,
+      balance: 0
+    });
+  }
+  return newParticipants.value.get(memberId)!;
+};
+
+// Update expandedRows type
+const expandedRows = ref<Map<string, SubParticipant[]>>(new Map<string, SubParticipant[]>());
+
+// Add watchEffect for isValidAccBalance
+watchEffect(() => {
+  isValidAccBalance.value = participants.value.every(mainParticipant => {
+    // Calculate main participant's total fee
+    const mainParticipantFee = calculateTotalFee(mainParticipant);
+
+    // Calculate total fee for all sub-participants of this main participant
+    const subParticipantsFee = (expandedRows.value.get(mainParticipant.memberId) || [])
+      .reduce((sum, sub) => sum + calculateTotalFee(sub), 0);
+
+    return mainParticipant.balance >= (mainParticipantFee + subParticipantsFee);
+  });
+});
+
+// Add helper function to get sub-rows
+const getSubRows = (memberId: string): SubParticipant[] => {
+  return expandedRows.value.get(memberId) || [];
+};
+
+// Add function to add new casual participant
+const addNewCasualParticipant = (memberId: string) => {
+  const newParticipant: SubParticipant = {
+    memberId: `new_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    name: '',
+    isCourtFeeApplied: false,
+    isShuttlecockFeeApplied: false,
+    isExtraFeeApplied: false,
+    courtFee: 0,
+    shuttlecockFee: 0,
+    extraFee: 0,
+    modifiedFee: 0,
+    balance: 0
+  };
+
+  const currentRows = expandedRows.value.get(memberId) || [];
+  expandedRows.value.set(memberId, [...currentRows, newParticipant]);
+};
+
+// Add function to remove new participant
+const removeNewParticipant = (memberId: string, participantId: string) => {
+  const currentRows = expandedRows.value.get(memberId) || [];
+  const updatedRows = currentRows.filter(row => row.memberId !== participantId);
+
+  if (updatedRows.length === 0) {
+    const newMap = new Map(expandedRows.value);
+    newMap.delete(memberId);
+    expandedRows.value = newMap;
+  } else {
+    const newMap = new Map(expandedRows.value);
+    newMap.set(memberId, updatedRows);
+    expandedRows.value = newMap;
+  }
+
+  handleCheckboxChange();
+};
+
+// Add helper function to get expanded rows count
+const getExpandedRowsCount = (memberId: string): number => {
+  const rows = expandedRows.value.get(memberId);
+  if (!rows) return 0;
+  return rows.length;
 };
 
 onMounted(async () => {
@@ -377,9 +604,27 @@ onMounted(async () => {
           participants.value = [...badmintonSession.participants]
         }
 
+        // Khởi tạo expandedRows từ sub-participants
+        badmintonSession.participants.forEach(p => {
+          if (p.participants && p.participants.length > 0) {
+            const subParticipants = p.participants.map(sub => ({
+              memberId: `sub_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+              name: sub.name,
+              isCourtFeeApplied: sub.isCourtFeeApplied,
+              isShuttlecockFeeApplied: sub.isShuttlecockFeeApplied,
+              isExtraFeeApplied: sub.isExtraFeeApplied,
+              courtFee: sub.courtFee,
+              shuttlecockFee: sub.shuttlecockFee,
+              extraFee: sub.extraFee,
+              modifiedFee: 0,
+              balance: 0
+            }));
+            expandedRows.value.set(p.memberId, subParticipants);
+          }
+        });
+
         courtType.value = badmintonSession.courtType
         selectedDate.value = new Date(badmintonSession.time)
-        // dateTime.value = new Date(badmintonSession.time)
         startTime.value = badmintonSession.startTime
         endTime.value = badmintonSession.endTime
         courtFee.value = badmintonSession.courtFee
@@ -390,7 +635,6 @@ onMounted(async () => {
         status.value = badmintonSession.status
         updateTime.value = new Date(badmintonSession.updateTime)
         numberShuttlecock.value = badmintonSession.numberShuttlecock
-        // participants.value = badmintonSession.participants
       }
       isLoading.value = false
     }
@@ -436,6 +680,16 @@ function validateForm(): boolean {
     errors.value.courtFee = "Tiền sân vượt quá tiền đang có của nhóm"
     valid = false;
   }
+
+  // Kiểm tra tên vãng lai
+  const hasEmptyCasualName = Array.from(expandedRows.value.values()).some(rows =>
+    rows.some(row => !row.name || row.name.trim() === '')
+  );
+  if (hasEmptyCasualName) {
+    errors.value.participants = 'Vui lòng nhập tên người chơi vãng lai';
+    valid = false;
+  }
+
   return valid;
 }
 
@@ -464,18 +718,42 @@ const handleCheckCreate = async (): Promise<void> => {
   }
 }
 const handleCreate = async (): Promise<void> => {
-  const listParticipantsRequest: ParticipantRequest[] = participants.value
+  // Lấy tất cả participants từ cả participants.value và expandedRows
+  const allParticipants: Participant[] = [...participants.value];
+
+  const listParticipantsRequest: ParticipantRequest[] = allParticipants
     .filter(p => p.isCourtFeeApplied || p.isExtraFeeApplied || p.isShuttlecockFeeApplied || p.modifiedFee !== 0)
-    .map(p => ({
-      memberId: p.memberId,
-      isCourtFeeApplied: p.isCourtFeeApplied,
-      isShuttlecockFeeApplied: p.isShuttlecockFeeApplied,
-      isExtraFeeApplied: p.isExtraFeeApplied,
-      courtFee: p.courtFee,
-      shuttlecockFee: p.shuttlecockFee,
-      extraFee: p.extraFee,
-      modifiedFee: p.modifiedFee
-    }));
+    .map(p => {
+      // Tìm các expanded rows cho participant này
+      const expandedRowsForParticipant = expandedRows.value.get(p.memberId) || [];
+      console.log('Expanded rows for participant:', p.name, expandedRowsForParticipant);
+
+      const nestedParticipants = expandedRowsForParticipant
+        .filter(row => row.isCourtFeeApplied || row.isExtraFeeApplied || row.isShuttlecockFeeApplied || row.modifiedFee !== 0)
+        .map(row => ({
+          name: row.name,
+          isCourtFeeApplied: row.isCourtFeeApplied,
+          isShuttlecockFeeApplied: row.isShuttlecockFeeApplied,
+          isExtraFeeApplied: row.isExtraFeeApplied,
+          courtFee: row.courtFee,
+          shuttlecockFee: row.shuttlecockFee,
+          extraFee: row.extraFee
+        }));
+
+      const participantRequest = {
+        memberId: p.memberId,
+        isCourtFeeApplied: p.isCourtFeeApplied,
+        isShuttlecockFeeApplied: p.isShuttlecockFeeApplied,
+        isExtraFeeApplied: p.isExtraFeeApplied,
+        courtFee: p.courtFee,
+        shuttlecockFee: p.shuttlecockFee,
+        extraFee: p.extraFee,
+        modifiedFee: p.modifiedFee,
+        participants: nestedParticipants
+      };
+      console.log('Participant request:', p.name, participantRequest);
+      return participantRequest;
+    });
 
   const param: BadmintonSessionRequest = {
     courtType: courtType.value,
@@ -495,6 +773,7 @@ const handleCreate = async (): Promise<void> => {
     groupId: GROUP_ID,
     numberShuttlecock: numberShuttlecock.value
   }
+  console.log('Final request data:', param);
   try {
     isLoading.value = true
     const createdSession = await appStore.createBadmintonSession(param);
@@ -512,6 +791,7 @@ const handleCreate = async (): Promise<void> => {
     isLoading.value = false
     console.log(error)
   }
+  return;
 }
 
 const handleEdit = async (): Promise<void> => {
@@ -520,16 +800,32 @@ const handleEdit = async (): Promise<void> => {
   }
   const listParticipantsRequest: ParticipantRequest[] = participants.value
     .filter(p => p.isCourtFeeApplied || p.isExtraFeeApplied || p.isShuttlecockFeeApplied || p.modifiedFee !== 0)
-    .map(p => ({
-      memberId: p.memberId,
-      isCourtFeeApplied: p.isCourtFeeApplied,
-      isShuttlecockFeeApplied: p.isShuttlecockFeeApplied,
-      isExtraFeeApplied: p.isExtraFeeApplied,
-      courtFee: p.courtFee,
-      shuttlecockFee: p.shuttlecockFee,
-      extraFee: p.extraFee,
-      modifiedFee: p.modifiedFee
-    }));
+    .map(p => {
+      const expandedRowsForParticipant = expandedRows.value.get(p.memberId) || [];
+      const nestedParticipants = expandedRowsForParticipant
+        .filter(row => row.isCourtFeeApplied || row.isExtraFeeApplied || row.isShuttlecockFeeApplied || row.modifiedFee !== 0)
+        .map(row => ({
+          name: row.name,
+          isCourtFeeApplied: row.isCourtFeeApplied,
+          isShuttlecockFeeApplied: row.isShuttlecockFeeApplied,
+          isExtraFeeApplied: row.isExtraFeeApplied,
+          courtFee: row.courtFee,
+          shuttlecockFee: row.shuttlecockFee,
+          extraFee: row.extraFee
+        }));
+
+      return {
+        memberId: p.memberId,
+        isCourtFeeApplied: p.isCourtFeeApplied,
+        isShuttlecockFeeApplied: p.isShuttlecockFeeApplied,
+        isExtraFeeApplied: p.isExtraFeeApplied,
+        courtFee: p.courtFee,
+        shuttlecockFee: p.shuttlecockFee,
+        extraFee: p.extraFee,
+        modifiedFee: p.modifiedFee,
+        participants: nestedParticipants
+      };
+    });
 
   const param: BadmintonSessionRequest = {
     courtType: courtType.value,
@@ -576,16 +872,32 @@ const handleConfirm = async (): Promise<void> => {
   }
   const listParticipantsRequest: ParticipantRequest[] = participants.value
     .filter(p => p.isCourtFeeApplied || p.isExtraFeeApplied || p.isShuttlecockFeeApplied || p.modifiedFee !== 0)
-    .map(p => ({
-      memberId: p.memberId,
-      isCourtFeeApplied: p.isCourtFeeApplied,
-      isShuttlecockFeeApplied: p.isShuttlecockFeeApplied,
-      isExtraFeeApplied: p.isExtraFeeApplied,
-      courtFee: p.courtFee,
-      shuttlecockFee: p.shuttlecockFee,
-      extraFee: p.extraFee,
-      modifiedFee: p.modifiedFee
-    }));
+    .map(p => {
+      const expandedRowsForParticipant = expandedRows.value.get(p.memberId) || [];
+      const nestedParticipants = expandedRowsForParticipant
+        .filter(row => row.isCourtFeeApplied || row.isExtraFeeApplied || row.isShuttlecockFeeApplied || row.modifiedFee !== 0)
+        .map(row => ({
+          name: row.name,
+          isCourtFeeApplied: row.isCourtFeeApplied,
+          isShuttlecockFeeApplied: row.isShuttlecockFeeApplied,
+          isExtraFeeApplied: row.isExtraFeeApplied,
+          courtFee: row.courtFee,
+          shuttlecockFee: row.shuttlecockFee,
+          extraFee: row.extraFee
+        }));
+
+      return {
+        memberId: p.memberId,
+        isCourtFeeApplied: p.isCourtFeeApplied,
+        isShuttlecockFeeApplied: p.isShuttlecockFeeApplied,
+        isExtraFeeApplied: p.isExtraFeeApplied,
+        courtFee: p.courtFee,
+        shuttlecockFee: p.shuttlecockFee,
+        extraFee: p.extraFee,
+        modifiedFee: p.modifiedFee,
+        participants: nestedParticipants
+      };
+    });
 
   const param: BadmintonSessionRequest = {
     courtType: courtType.value,
@@ -618,6 +930,7 @@ const handleConfirm = async (): Promise<void> => {
       if (createdSession.errors.shuttlecockFee) {
         errors.value.shuttlecockFee = createdSession.errors.shuttlecockFee
       }
+      dialogConfirm.value = false
     }
     isLoading.value = false
   } catch (error) {
@@ -678,6 +991,19 @@ const navigationToDetailPage = (id: string) => {
 }
 
 const team = ref<BadmintonTeamResponse>()
+const headers = [
+  { title: 'STT', key: 'no', align: 'start' as const },
+  { title: 'Tên', key: 'name', align: 'start' as const },
+  { title: 'Tính tiền sân', key: 'isCourtFeeApplied', align: 'start' as const },
+  { title: 'Tính tiền cầu', key: 'isShuttlecockFeeApplied', align: 'start' as const },
+  { title: 'Tính tiền khác', key: 'isExtraFeeApplied', align: 'start' as const },
+  { title: 'Tiền sân', key: 'courtFee', align: 'end' as const },
+  { title: 'Tiền cầu', key: 'shuttlecockFee', align: 'end' as const },
+  { title: 'Tiền khác', key: 'extraFee', align: 'end' as const },
+  { title: 'Tiền điều chỉnh', key: 'modifiedFee', align: 'end' as const },
+  { title: 'Tổng', key: 'total', align: 'end' as const }
+]
+
 const fetchTeam = async () => {
   try {
     const res = await appStore.getBadmintonTeamById(GROUP_ID)
@@ -686,6 +1012,70 @@ const fetchTeam = async () => {
     console.error('Lỗi khi tải thông tin team:', error)
   }
 }
+
+// Thêm hàm tính phí cho newParticipant
+const calculateNewParticipantFees = (memberId: string) => {
+  const newParticipant = getNewParticipant(memberId);
+  const allParticipants = [...participants.value, newParticipant];
+
+  const courtFeeApplied = allParticipants.filter(p => p.isCourtFeeApplied);
+  const shuttlecockFeeApplied = allParticipants.filter(p => p.isShuttlecockFeeApplied);
+  const extraFeeApplied = allParticipants.filter(p => p.isExtraFeeApplied);
+
+  const courtFeeList = splitFeeEvenlyInt(courtFee.value, courtFeeApplied.length);
+  const shuttlecockFeeList = splitFeeEvenlyInt(shuttlecockFee.value, shuttlecockFeeApplied.length);
+  const extraFeeList = splitFeeEvenlyInt(extraFee.value, extraFeeApplied.length);
+
+  // Tìm vị trí của newParticipant trong danh sách
+  const courtIndex = courtFeeApplied.findIndex(p => p === newParticipant);
+  const shuttleIndex = shuttlecockFeeApplied.findIndex(p => p === newParticipant);
+  const extraIndex = extraFeeApplied.findIndex(p => p === newParticipant);
+
+  const courtFeePerPerson = courtIndex >= 0 ? courtFeeList[courtIndex] : 0;
+  const shuttlecockFeePer = shuttleIndex >= 0 ? shuttlecockFeeList[shuttleIndex] : 0;
+  const extraFeePer = extraIndex >= 0 ? extraFeeList[extraIndex] : 0;
+
+  newParticipants.value.set(memberId, {
+    ...newParticipant,
+    courtFee: courtFeePerPerson,
+    shuttlecockFee: shuttlecockFeePer,
+    extraFee: extraFeePer,
+  });
+};
+
+// Thêm hàm để tạo ID mới cho newParticipant
+const generateNewParticipantId = () => {
+  return `new_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+};
+
+// Sửa lại hàm handleExpand
+const handleExpand = (participant: Participant, isExpanded: () => boolean, toggleExpand: () => void) => {
+  const memberId = participant.memberId;
+
+  // Nếu chưa có danh sách row cho memberId này, tạo mới với một row mặc định
+  if (!expandedRows.value.has(memberId)) {
+    const newParticipant: Participant = {
+      memberId: `new_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      name: '',
+      isCourtFeeApplied: false,
+      isShuttlecockFeeApplied: false,
+      isExtraFeeApplied: false,
+      courtFee: 0,
+      shuttlecockFee: 0,
+      extraFee: 0,
+      modifiedFee: 0,
+      balance: 0
+    };
+    expandedRows.value.set(memberId, [newParticipant]);
+  } else {
+    expandedRows.value.delete(memberId);
+  }
+};
+
+// Update getMainRowIndex function to handle string type
+const getMainRowIndex = (memberId: string): number => {
+  return participants.value.findIndex(p => p.memberId === memberId);
+};
 
 </script>
 
@@ -834,8 +1224,8 @@ const fetchTeam = async () => {
         margin-bottom: 12px;
         border: 1px solid #ccc;
         border-radius: 8px;
-        // padding: 8px;
         background-color: #fff;
+        overflow: hidden;
       }
 
       td {
@@ -843,17 +1233,94 @@ const fetchTeam = async () => {
         justify-content: space-between;
         align-items: center;
         border: none;
+        padding: 8px 12px;
 
         :deep(.v-field__field input) {
-          height: 25px;
-          min-height: 25px;
+          height: 30px;
+          min-height: 30px;
+        }
+
+        &:before {
+          content: attr(data-label);
+          font-weight: 600;
+          margin-right: 8px;
         }
       }
+    }
+  }
 
-      td::before {
-        content: attr(data-label);
-        font-weight: 600;
-        margin-right: 8px;
+  /* Điều chỉnh layout cho expanded rows */
+  .v-table tbody tr td[colspan] {
+    padding: 24px !important;
+    border: none;
+    background: transparent;
+    width: 100%;
+    min-height: 200px;
+
+    .v-table {
+      margin: 0;
+      border: none;
+      background: transparent;
+      width: 100%;
+
+      tbody {
+        display: block;
+        width: 100%;
+
+        tr {
+          display: flex;
+          flex-direction: column;
+          margin: 0 0 16px 0;
+          border: 1px solid #ccc;
+          border-radius: 8px;
+          background-color: #fff;
+          overflow: hidden;
+          min-height: 120px;
+
+          &:last-child {
+            margin-bottom: 0;
+          }
+
+          td {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: none;
+            padding: 12px 16px;
+            background: transparent;
+            width: 100%;
+            min-height: 48px;
+
+            &:before {
+              content: attr(data-label);
+              font-weight: 600;
+              margin-right: 8px;
+            }
+
+            .d-flex.flex-column {
+              width: 100%;
+              gap: 12px;
+            }
+
+            .d-flex.align-center {
+              margin-bottom: 12px;
+              min-height: 36px;
+
+              &:last-child {
+                margin-bottom: 0;
+              }
+            }
+
+            .text-caption {
+              font-size: 13px;
+            }
+
+            :deep(.v-field__field input) {
+              height: 36px;
+              min-height: 36px;
+            }
+          }
+        }
       }
     }
   }
@@ -865,10 +1332,173 @@ const fetchTeam = async () => {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.3); // nền mờ
+  background: rgba(0, 0, 0, 0.3);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 10; // nhớ cao hơn nội dung bên trong
+  z-index: 10;
+}
+
+.expanded-list {
+  padding: 16px;
+  background: #f5f5f5;
+}
+
+.expanded-item {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.item-header {
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+  background: #fafafa;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.item-content {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fee-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f5f5f5;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.fee-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  span {
+    font-size: 14px;
+    color: #666;
+  }
+}
+
+.fee-amount {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+}
+
+.item-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #fafafa;
+  border-top: 1px solid #eee;
+}
+
+.total-label {
+  font-size: 14px;
+  color: #666;
+}
+
+.total-amount {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+@media (max-width: 768px) {
+  .expanded-list {
+    padding: 12px;
+  }
+
+  .expanded-item {
+    margin-bottom: 6px;
+  }
+
+  .item-header,
+  .item-content,
+  .item-footer {
+    padding: 10px;
+  }
+
+  .fee-row {
+    padding: 6px 0;
+  }
+
+  .fee-info span,
+  .fee-amount,
+  .total-label,
+  .total-amount {
+    font-size: 13px;
+  }
+
+  /* Mobile styles for expanded rows */
+  .v-table tbody tr td[colspan] {
+    padding: 0 !important;
+    border: none;
+    background: transparent;
+    width: 100%;
+
+    .expanded-list {
+      padding: 8px;
+    }
+
+    .expanded-item {
+      margin-bottom: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background: white;
+    }
+
+    .item-header {
+      padding: 8px 12px;
+      background: #f5f5f5;
+    }
+
+    .item-content {
+      padding: 8px 12px;
+    }
+
+    .fee-row {
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+
+      &:last-child {
+        border-bottom: none;
+      }
+    }
+
+    .item-footer {
+      padding: 8px 12px;
+      background: #f5f5f5;
+      border-top: 1px solid #eee;
+    }
+  }
+}
+
+.sub-row {
+  background-color: #d4e2b7 !important;
+
+  // td {
+  //   // border: 1px solid #2196f3;
+  // }
 }
 </style>

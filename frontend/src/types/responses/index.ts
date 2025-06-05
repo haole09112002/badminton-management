@@ -30,6 +30,15 @@ export interface Participant {
   extraFee: number
   modifiedFee: number,
   balance: number
+  participants?: {
+    name: string;
+    isCourtFeeApplied: boolean;
+    isShuttlecockFeeApplied: boolean;
+    isExtraFeeApplied: boolean;
+    courtFee: number;
+    shuttlecockFee: number;
+    extraFee: number;
+  }[];
 }
 
 export interface ExtraFee {
