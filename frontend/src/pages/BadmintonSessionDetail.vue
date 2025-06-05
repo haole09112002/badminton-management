@@ -150,6 +150,7 @@
                 data-label="Thao tác">
                 <div class="d-flex gap-2">
                   <v-btn text="Thêm vãng lai" class="text-none" color="primary" size="small" variant="text" border slim
+                    :disabled="(appStore.user?.id !== participant.memberId && !appStore.isLeadOrAdminPermission)"
                     @click="addNewCasualParticipant(participant.memberId)"></v-btn>
                 </div>
               </td>
@@ -173,22 +174,23 @@
                 </td>
                 <td class="text-left" data-label="Tên">
                   <TextFieldWithLabel v-if="status !== 'done' && status !== 'confirmed'" v-model="subRow.name"
-                    :hide-details="true" label="Tên vãng lai" />
+                    :disabled="memberId !== appStore.user?.id && !appStore.isLeadOrAdminPermission" :hide-details="true"
+                    label="Tên vãng lai" />
                   <span v-else class="text-caption">Vãng lai: <span class=" text-black">{{ subRow.name }}</span></span>
                 </td>
                 <td data-label="Tính tiền sân">
                   <v-checkbox v-model="subRow.isCourtFeeApplied" density="compact" hide-details color="blue"
-                    :readonly="status === 'done' || status === 'confirmed' || !appStore.isLeadOrAdminPermission"
+                    :readonly="status === 'done' || status === 'confirmed' || (!appStore.isLeadOrAdminPermission && memberId !== appStore.user?.id)"
                     @update:model-value="handleCheckboxChange"></v-checkbox>
                 </td>
                 <td v-if="isCasualCourt" data-label="Tính tiền cầu">
                   <v-checkbox v-model="subRow.isShuttlecockFeeApplied" density="compact" hide-details color="blue"
-                    :readonly="status === 'done' || status === 'confirmed' || !appStore.isLeadOrAdminPermission"
+                    :readonly="status === 'done' || status === 'confirmed' || (!appStore.isLeadOrAdminPermission && memberId !== appStore.user?.id)"
                     @update:model-value="handleCheckboxChange"></v-checkbox>
                 </td>
                 <td v-if="isCasualCourt" data-label="Tính tiền khác">
                   <v-checkbox v-model="subRow.isExtraFeeApplied" density="compact" hide-details color="blue"
-                    :readonly="status === 'done' || status === 'confirmed' || !appStore.isLeadOrAdminPermission"
+                    :readonly="status === 'done' || status === 'confirmed' || (!appStore.isLeadOrAdminPermission && memberId !== appStore.user?.id)"
                     @update:model-value="handleCheckboxChange"></v-checkbox>
                 </td>
                 <td class="text-right font-weight-bold" data-label="Tiền sân">
@@ -215,6 +217,7 @@
                 <td v-if="isCasualCourt && status !== 'done' && status !== 'confirmed'" class="text-left"
                   data-label="Thao tác">
                   <v-btn icon="mdi-delete" size="small" color="error" variant="text" density="compact"
+                    :disabled="!appStore.isLeadOrAdminPermission && memberId !== appStore.user?.id"
                     @click="removeNewParticipant(memberId, subRow.memberId)"></v-btn>
                 </td>
               </tr>
@@ -233,8 +236,9 @@
       </v-table>
 
       <div class="action">
-        <div>
-          <span>Cập nhật lúc: {{ updateTime?.toLocaleString() ?? "./." }}</span>
+        <div class="align-center">
+          <span>{{ `Cập nhật bởi: ${updateByName ?? "./."}, ${updateTime?.toLocaleString() ?? "./."}` }}</span>
+
         </div>
       </div>
       <div class="action" v-show="status !== 'done'">
@@ -356,6 +360,7 @@ const numberShuttlecock = ref<number>(0)
 const startTime = ref<string>("");
 const endTime = ref<string>("");
 const updateTime = ref<Date>();
+const updateByName = ref<string>("");
 const location = ref<string>("");
 const courtFee = ref<number>(0);
 const shuttlecockFee = ref<number>(0);
@@ -634,6 +639,7 @@ onMounted(async () => {
         note.value = badmintonSession.note ?? ""
         status.value = badmintonSession.status
         updateTime.value = new Date(badmintonSession.updateTime)
+        updateByName.value = badmintonSession.updateByName
         numberShuttlecock.value = badmintonSession.numberShuttlecock
       }
       isLoading.value = false
@@ -785,6 +791,7 @@ const handleCreate = async (): Promise<void> => {
     if (createdSession && createdSession._id) {
       status.value = createdSession?.status
       updateTime.value = new Date(createdSession.updateTime)
+      updateByName.value = createdSession.updateByName
       navigationToDetailPage(createdSession._id)
     }
   } catch (error) {
@@ -851,6 +858,7 @@ const handleEdit = async (): Promise<void> => {
     if (createdSession.session._id) {
       status.value = createdSession.session.status
       updateTime.value = new Date(createdSession.session.updateTime)
+      updateByName.value = createdSession.session.updateByName
       if (createdSession.errors.numberShuttlecock) {
         errors.value.numberShuttlecock = createdSession.errors.numberShuttlecock
       }
@@ -923,6 +931,7 @@ const handleConfirm = async (): Promise<void> => {
     if (createdSession.session._id) {
       status.value = createdSession.session.status
       updateTime.value = new Date(createdSession.session.updateTime)
+      updateByName.value = createdSession.session.updateByName
       if (createdSession.errors.numberShuttlecock) {
         errors.value.numberShuttlecock = createdSession.errors.numberShuttlecock
       }

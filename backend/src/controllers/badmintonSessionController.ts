@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import mongoose, { ClientSession } from 'mongoose';
 import { InternalErrorResponse, SuccessResponse, NotFoundResponse, BadRequestResponse } from '../common/responseType';
-import { BadmintonSessionModel, Participant } from '../models/badmintonSession';
+import { BadmintonSessionModel, Participant, BadmintonSession } from '../models/badmintonSession';
 import { BadmintonTeam } from '../models/BadmintonTeam';
 import { Member, MemberDocument } from '../models/Member';
 import { Payment } from '../models/payment';
@@ -17,11 +17,11 @@ import { splitFeeEvenlyInt } from '../utils/money';
 export const createBadmintonSession = async (req: Request, res: Response) => {
   try {
     const { courtType, dateList, location, courtFee, shuttlecockFee, participants, extraFee, note, startTime, endTime, groupId, numberShuttlecock } = req.body as BadmintonSessionRequest;
+    const user = (req as any).user;
     console.log(participants)
     if (!courtType || !dateList || dateList.length < 0 || !location || !startTime || !endTime) {
       return new InternalErrorResponse("Thiếu thông tin bắt buộc tên sân hoặc ngày đánh").send(res);
     }
-
 
     let updatedParticipants = participants;
 
@@ -33,14 +33,12 @@ export const createBadmintonSession = async (req: Request, res: Response) => {
       if (validMembers.length !== participants.length) {
         return new InternalErrorResponse("Một hoặc nhiều thành viên không tồn tại trong hệ thống").send(res);
       }
-
     }
 
     if (courtType === 'casual') {
       let time = new Date(dateList[0])
 
       let updatedParticipants: Participant[] = await mapParticipantsRequestToParticipant(participants, courtFee, shuttlecockFee, extraFee);
-      console.log(JSON.stringify(updatedParticipants))
       const newSession = new BadmintonSessionModel({
         courtType,
         time,
@@ -56,13 +54,19 @@ export const createBadmintonSession = async (req: Request, res: Response) => {
         participants: updatedParticipants,
         updateTime: Date(),
         groupId,
-        numberShuttlecock
-        // updateById
+        numberShuttlecock,
+        updateById: user.id
       });
-      console.log(newSession)
 
       await newSession.save();
-      return new SuccessResponse('Tạo buổi đánh thành công', newSession).send(res);
+      const populatedSession = await BadmintonSessionModel.findById(newSession._id)
+        .populate('updateById', 'name')
+        .lean();
+      return new SuccessResponse('Tạo buổi đánh thành công', {
+        ...populatedSession,
+        updateById: populatedSession?.updateById?._id?.toString() || "",
+        updateByName: (populatedSession?.updateById as any)?.name || ""
+      }).send(res);
     }
     const session: ClientSession = await mongoose.startSession();
     session.startTransaction();
@@ -93,8 +97,8 @@ export const createBadmintonSession = async (req: Request, res: Response) => {
           participantsCount: updatedParticipants.length,
           participants: updatedParticipants,
           updateTime: Date(),
-          groupId
-          // updateById
+          groupId,
+          updateById: user.id
         });
         await newSession.save({ session });
       };
@@ -119,7 +123,6 @@ export const createBadmintonSession = async (req: Request, res: Response) => {
     }
 
   } catch (err) {
-
     console.log("ERROR", err);
     return new InternalErrorResponse().send(res);
   }
@@ -128,6 +131,7 @@ export const createBadmintonSession = async (req: Request, res: Response) => {
 export const getAllBadmintonSessions = async (req: Request, res: Response) => {
   try {
     const sessionList = await BadmintonSessionModel.find()
+      .populate('updateById', 'name')
       .sort({ time: -1 })
       .limit(20);
     const result = sessionList.map(m => {
@@ -146,8 +150,8 @@ export const getAllBadmintonSessions = async (req: Request, res: Response) => {
         note: m.note,
         status: m.status,
         updateTime: m.updateTime,
-        updateById: "",
-        updateByName: ""
+        updateById: m.updateById?._id?.toString() || "",
+        updateByName: (m.updateById as any)?.name || ""
       } as BadmintonSessionResponse
     })
     return new SuccessResponse('Lấy thông tin buổi đánh thành công', result).send(res);
@@ -165,6 +169,7 @@ export const getBadmintonSessions = async (req: Request, res: Response) => {
         path: 'participants.memberId',
         select: 'name balance'
       })
+      .populate('updateById', 'name')
       .lean()
     if (!session) {
       return new InternalErrorResponse('Không tìm thấy buổi đánh cầu lông').send(res);
@@ -208,8 +213,8 @@ export const getBadmintonSessions = async (req: Request, res: Response) => {
       note: session.note,
       status: session.status,
       updateTime: session.updateTime,
-      updateById: "",
-      updateByName: "",
+      updateById: session.updateById?._id?.toString() || "",
+      updateByName: (session.updateById as any)?.name || "",
       numberShuttlecock: session.numberShuttlecock
     } as unknown as BadmintonSessionResponse;
     return new SuccessResponse('Lấy thông tin buổi đánh thành công', result).send(res);
@@ -283,6 +288,7 @@ export const updateBadmintonSession = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { courtType, dateList, location, courtFee, shuttlecockFee, participants, extraFee, note, startTime, endTime, numberShuttlecock, groupId } = req.body as BadmintonSessionRequest;
+    const user = (req as any).user;
 
     if (!id) {
       return new InternalErrorResponse("Thiếu ID buổi đánh").send(res);
@@ -298,7 +304,6 @@ export const updateBadmintonSession = async (req: Request, res: Response) => {
     }
 
     let updatedParticipants: Participant[] = []
-
 
     if (participants.length > 0) {
       const validMembers = await Member.find({
@@ -332,8 +337,11 @@ export const updateBadmintonSession = async (req: Request, res: Response) => {
     session.participantsCount = updatedParticipants.length;
     session.updateTime = new Date()
     session.numberShuttlecock = numberShuttlecock
-    // session.updateById= ""
+    session.updateById = user.id
     await session.save();
+    const updatedSession = await BadmintonSessionModel.findById(session._id)
+      .populate('updateById', 'name')
+      .lean();
     const errors: Partial<Record<'numberShuttlecock' | 'shuttlecockFee', string>> = {};
     // Kiểm tra số cầu lông hợp lệ
     if (team.numberShuttlecock < numberShuttlecock) {
@@ -345,7 +353,11 @@ export const updateBadmintonSession = async (req: Request, res: Response) => {
       errors.shuttlecockFee = "Phí cầu vượt quá ngân sách nhóm";
     }
     const result = {
-      session,
+      session: {
+        ...updatedSession,
+        updateById: updatedSession?.updateById || null,
+        updateByName: (updatedSession?.updateById as any)?.name || ""
+      } as unknown as BadmintonSession,
       errors
     } as BadmintonSessionWaringResponse
     return new SuccessResponse("Cập nhật buổi đánh thành công", result).send(res);
@@ -359,6 +371,7 @@ export const confirmBadmintonSession = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { courtType, dateList, location, courtFee, shuttlecockFee, participants, extraFee, note, startTime, endTime, numberShuttlecock, groupId } = req.body as BadmintonSessionRequest;
+    const user = (req as any).user;
 
     if (!id) {
       return new InternalErrorResponse("Thiếu ID buổi đánh").send(res);
@@ -379,7 +392,6 @@ export const confirmBadmintonSession = async (req: Request, res: Response) => {
     }
 
     let updatedParticipants: Participant[] = []
-
 
     if (participants.length > 0) {
       const validMembers = await Member.find({
@@ -415,8 +427,7 @@ export const confirmBadmintonSession = async (req: Request, res: Response) => {
       return new SuccessResponse("Xác nhận buổi đánh không thành công", result).send(res);
     }
 
-
-    // Cập nhật thông tin\
+    // Cập nhật thông tin
     session.time = dateList[0];
     session.startTime = startTime;
     session.endTime = endTime;
@@ -432,9 +443,17 @@ export const confirmBadmintonSession = async (req: Request, res: Response) => {
     session.participantsCount = updatedParticipants.length;
     session.updateTime = new Date()
     session.numberShuttlecock = numberShuttlecock
+    session.updateById = user.id
     await session.save();
+    const confirmedSession = await BadmintonSessionModel.findById(session._id)
+      .populate('updateById', 'name')
+      .lean();
     const result = {
-      session,
+      session: {
+        ...confirmedSession,
+        updateById: confirmedSession?.updateById || null,
+        updateByName: (confirmedSession?.updateById as any)?.name || ""
+      } as unknown as BadmintonSession,
       errors
     } as BadmintonSessionWaringResponse
     return new SuccessResponse("Xác nhận buổi đánh  thành công", result).send(res);
@@ -534,15 +553,22 @@ export const payBadmintonSession = async (req: Request, res: Response) => {
     if (session.courtType !== 'fixed') {
       let totalFee = session.courtFee + session.extraFee + sumModifiedFee
       group.amount = group.amount - totalFee
-      await paymentService.recordTransactionHistoryForGroup(undefined, group, totalFee * -1, session, mongoSession, `[VÃNG LAI]Thanh toán buổi đánh cầu lông sân ${session.location} ngày ${new Date(session.time).toLocaleDateString()} (-${session.numberShuttlecock} cầu/ còn ${group.numberShuttlecock})`)
+      await paymentService.recordTransactionHistoryForGroup(undefined, group, totalFee * -1, session, mongoSession, `[VÃNG LAI]Thanh toán buổi đánh cầu lông sân ${session.location} ngày  ${formatDateVi(new Date)} (-${session.numberShuttlecock} cầu/ còn ${group.numberShuttlecock})`)
     } else {
       group.amount = group.amount - sumModifiedFee
-      await paymentService.recordTransactionHistoryForGroup(undefined, group, sumModifiedFee * -1, session, mongoSession, `[CỐ ĐỊNH]Thanh toán buổi đánh cầu lông sân ${session.location} ngày ${new Date(session.time).toLocaleDateString()} (-${session.numberShuttlecock} cầu/ còn ${group.numberShuttlecock})`)
+      await paymentService.recordTransactionHistoryForGroup(undefined, group, sumModifiedFee * -1, session, mongoSession, `[CỐ ĐỊNH]Thanh toán buổi đánh cầu lông sân ${session.location} ngày ${formatDateVi(new Date)} (-${session.numberShuttlecock} cầu/ còn ${group.numberShuttlecock})`)
     }
     await group.save({ session: mongoSession })
 
     await mongoSession.commitTransaction();
-    return new SuccessResponse('Thanh toán thành công', session).send(res);
+    const paidSession = await BadmintonSessionModel.findById(session._id)
+      .populate('updateById', 'name')
+      .lean();
+    return new SuccessResponse('Thanh toán thành công', {
+      ...paidSession,
+      updateById: paidSession?.updateById?._id?.toString() || "",
+      updateByName: (paidSession?.updateById as any)?.name || ""
+    }).send(res);
   } catch (err) {
     console.error('TRANSACTION ERROR:', err);
     await mongoSession.abortTransaction();

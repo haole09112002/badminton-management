@@ -8,9 +8,9 @@
           <v-text-field v-model="password" label="Mật khẩu" type="password" :rules="passwordRules" required />
           <v-btn type="submit" color="primary" block :disabled="!isFormValid">Đăng nhập</v-btn>
         </v-form>
-        <div class="d-flex mt-4 justify-center">
+        <!-- <div class="d-flex mt-4 justify-center">
           <router-link to="/register">Đăng ký</router-link>
-        </div>
+        </div> -->
 
       </v-card-text>
     </v-card>
