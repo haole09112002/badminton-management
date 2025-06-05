@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import mongoose, { ClientSession } from 'mongoose';
-import { json } from 'stream/consumers';
 import { InternalErrorResponse, SuccessResponse, NotFoundResponse, BadRequestResponse } from '../common/responseType';
 import { BadmintonSessionModel, Participant } from '../models/badmintonSession';
 import { BadmintonTeam } from '../models/BadmintonTeam';
@@ -11,12 +10,14 @@ import { BadmintonSessionResponse, BadmintonSessionWaringResponse } from '../mod
 import { TransactionHistory } from '../models/TransactionHistory';
 import paymentService from '../services/paymentService';
 import PaymentService from '../services/paymentService';
+import { formatDateVi } from '../utils/date';
+import { splitFeeEvenlyInt } from '../utils/money';
 
 // Tạo buổi đánh cầu lông mới
 export const createBadmintonSession = async (req: Request, res: Response) => {
   try {
     const { courtType, dateList, location, courtFee, shuttlecockFee, participants, extraFee, note, startTime, endTime, groupId, numberShuttlecock } = req.body as BadmintonSessionRequest;
-
+    console.log(participants)
     if (!courtType || !dateList || dateList.length < 0 || !location || !startTime || !endTime) {
       return new InternalErrorResponse("Thiếu thông tin bắt buộc tên sân hoặc ngày đánh").send(res);
     }
@@ -37,16 +38,9 @@ export const createBadmintonSession = async (req: Request, res: Response) => {
 
     if (courtType === 'casual') {
       let time = new Date(dateList[0])
-      const courtFeeApplied = participants.filter(p => p.isCourtFeeApplied);
-      const shuttlecockFeeApplied = participants.filter(p => p.isShuttlecockFeeApplied);
-      const extraFeeApplied = participants.filter(p => p.isExtraFeeApplied);
 
-      updatedParticipants = participants.map(p => ({
-        ...p,
-        courtFee: p.isCourtFeeApplied ? courtFee / courtFeeApplied.length : 0,
-        shuttlecockFee: p.isShuttlecockFeeApplied ? shuttlecockFee / shuttlecockFeeApplied.length : 0,
-        extraFee: p.isExtraFeeApplied ? extraFee / extraFeeApplied.length : 0,
-      }));
+      let updatedParticipants: Participant[] = await mapParticipantsRequestToParticipant(participants, courtFee, shuttlecockFee, extraFee);
+      console.log(JSON.stringify(updatedParticipants))
       const newSession = new BadmintonSessionModel({
         courtType,
         time,
@@ -65,6 +59,7 @@ export const createBadmintonSession = async (req: Request, res: Response) => {
         numberShuttlecock
         // updateById
       });
+      console.log(newSession)
 
       await newSession.save();
       return new SuccessResponse('Tạo buổi đánh thành công', newSession).send(res);
@@ -105,9 +100,12 @@ export const createBadmintonSession = async (req: Request, res: Response) => {
       };
 
       const team = await PaymentService.findTeamByGroupId(groupId, session)
+      if (courtType === 'fixed' && team.amount < courtFee) {
+        return new BadRequestResponse("Trang thai khong hop le").send(res);
+      }
       await PaymentService.updateTeamBalance(team, courtFee * -1, session);
       const dateFormat = dateList
-        .map(date => new Date(date).toDateString())
+        .map(date => formatDateVi(new Date(date)))
         .join(', ');
       let message = `Thanh toán tiền sân cố định ${location} các ngày ${dateFormat}`
       await PaymentService.recordTransactionHistoryForGroup(undefined, team, courtFee * -1, undefined, session, message);
@@ -172,39 +170,48 @@ export const getBadmintonSessions = async (req: Request, res: Response) => {
       return new InternalErrorResponse('Không tìm thấy buổi đánh cầu lông').send(res);
     }
     const participantList = session.participants.map((p) => {
-      console.log(JSON.stringify(p))
+      const member = p.memberId as any; // Type assertion since we know it's populated
       return {
-        memberId: p.memberId._id,
-        name: p.memberId.name,
-        balance: p.memberId.balance,
+        memberId: member._id.toString(),
+        name: member.name,
+        balance: member.balance,
         isCourtFeeApplied: p.isCourtFeeApplied,
         isShuttlecockFeeApplied: p.isShuttlecockFeeApplied,
         isExtraFeeApplied: p.isExtraFeeApplied,
         courtFee: p.courtFee,
         shuttlecockFee: p.shuttlecockFee,
         extraFee: p.extraFee,
-        modifiedFee: p.modifiedFee
+        modifiedFee: p.modifiedFee,
+        participants: p.subParticipants?.map(sub => ({
+          name: sub.name,
+          isCourtFeeApplied: sub.isCourtFeeApplied,
+          isShuttlecockFeeApplied: sub.isShuttlecockFeeApplied,
+          isExtraFeeApplied: sub.isExtraFeeApplied,
+          courtFee: sub.courtFee,
+          shuttlecockFee: sub.shuttlecockFee,
+          extraFee: sub.extraFee
+        })) || []
       }
     })
-    const result =
-      {
-        id: session.id,
-        courtType: session.courtType,
-        time: session.time,
-        startTime: session.startTime,
-        endTime: session.endTime,
-        location: session.location,
-        courtFee: session.courtFee,
-        shuttlecockFee: session.shuttlecockFee,
-        numberParticipant: session.participants.length,
-        participants: participantList,
-        extraFee: session.extraFee,
-        note: session.note,
-        status: session.status,
-        updateTime: session.updateTime,
-        updateById: "",
-        updateByName: ""
-      } as BadmintonSessionResponse
+    const result = {
+      id: session.id,
+      courtType: session.courtType,
+      time: session.time,
+      startTime: session.startTime,
+      endTime: session.endTime,
+      location: session.location,
+      courtFee: session.courtFee,
+      shuttlecockFee: session.shuttlecockFee,
+      numberParticipant: session.participants.length,
+      participants: participantList,
+      extraFee: session.extraFee,
+      note: session.note,
+      status: session.status,
+      updateTime: session.updateTime,
+      updateById: "",
+      updateByName: "",
+      numberShuttlecock: session.numberShuttlecock
+    } as unknown as BadmintonSessionResponse;
     return new SuccessResponse('Lấy thông tin buổi đánh thành công', result).send(res);
   } catch (err) {
     console.error('Lỗi khi lấy session:', err);
@@ -445,7 +452,6 @@ export const payBadmintonSession = async (req: Request, res: Response) => {
 
   try {
     mongoSession.startTransaction();
-
     const session = await BadmintonSessionModel.findById(id).session(mongoSession);
     if (!session) {
       await mongoSession.abortTransaction();
@@ -464,18 +470,31 @@ export const payBadmintonSession = async (req: Request, res: Response) => {
       await mongoSession.abortTransaction();
       return res.status(400).json({ message: 'Một hoặc nhiều thành viên không tồn tại' });
     }
+    const group = await BadmintonTeam.findById(session.groupId).session(mongoSession);
+    if (!group) {
+      await mongoSession.abortTransaction();
+      return res.status(400).json({ message: 'Group khong ton tai' });
+    }
 
     // Trừ tiền từng thành viên
     for (const participant of session.participants) {
       const member = members.find(m => m._id.toString() === participant.memberId.toString());
       if (!member) continue;
 
-      const totalFee = participant.courtFee + participant.shuttlecockFee + participant.extraFee + participant.modifiedFee;
+      // Calculate main participant's total fee
+      const participantTotalFee = participant.courtFee + participant.shuttlecockFee + participant.extraFee + participant.modifiedFee;
+
+      // Calculate total fee for all sub-participants
+      const subParticipantsTotalFee = participant.subParticipants?.reduce((sum, sub) =>
+        sum + sub.courtFee + sub.shuttlecockFee + sub.extraFee, 0) || 0;
+
+      // Total fee to deduct = main participant fee + sub-participants fees
+      const totalFee = participantTotalFee + subParticipantsTotalFee;
 
       if (member.balance < totalFee) {
         await mongoSession.abortTransaction();
         return res.status(400).json({
-          message: `Thành viên ${member.name || member._id} không đủ số dư để thanh toán`
+          message: `Member ${member.name || member._id} has insufficient balance for payment`
         });
       }
       const balanceBefore = member.balance;
@@ -489,7 +508,7 @@ export const payBadmintonSession = async (req: Request, res: Response) => {
         type: 'person',
         balanceBefore: balanceBefore,
         balanceAfter: balanceAfter,
-        reason: `Thanh toán buổi đánh cầu lông sân ${session.location} ngày ${new Date(session.time).toLocaleDateString()}`
+        reason: `Thanh toán buổi đánh sân ${session.location} ngày  ${formatDateVi(new Date(session.time))}`
       });
       await history.save({ session: mongoSession });
     }
@@ -503,19 +522,22 @@ export const payBadmintonSession = async (req: Request, res: Response) => {
       select: 'name balance',
       options: { session: mongoSession }, // ✅ đúng cách
     });
-    const group = await BadmintonTeam.findById(session.groupId).session(mongoSession);
-    if (!group) {
-      await mongoSession.abortTransaction();
-      return res.status(400).json({ message: 'Group khong ton tai' });
+
+    if (session.numberShuttlecock !== 0) {
+      group.shuttlecockFee = group.shuttlecockFee - (session.numberShuttlecock * group.shuttlecockFee / group.numberShuttlecock)
+      group.numberShuttlecock = group.numberShuttlecock - session.numberShuttlecock
     }
 
-    group.numberShuttlecock = group.numberShuttlecock - session.numberShuttlecock
+    let sumModifiedFee = session.participants.reduce((sum, p) => {
+      return sum + (p.modifiedFee ?? 0);
+    }, 0);
     if (session.courtType !== 'fixed') {
-      let totalFee = session.courtFee + session.extraFee
+      let totalFee = session.courtFee + session.extraFee + sumModifiedFee
       group.amount = group.amount - totalFee
-      await paymentService.recordTransactionHistoryForGroup(undefined, group, totalFee * -1, session, mongoSession, `[VÃNG LAI]Thanh toán buổi đánh cầu lông sân ${session.location} ngày ${new Date(session.time).toLocaleDateString()} (${session.numberShuttlecock} cầu)`)
+      await paymentService.recordTransactionHistoryForGroup(undefined, group, totalFee * -1, session, mongoSession, `[VÃNG LAI]Thanh toán buổi đánh cầu lông sân ${session.location} ngày ${new Date(session.time).toLocaleDateString()} (-${session.numberShuttlecock} cầu/ còn ${group.numberShuttlecock})`)
     } else {
-      await paymentService.recordTransactionHistoryForGroup(undefined, group, 0, session, mongoSession, `[CỐ ĐỊNH]Thanh toán buổi đánh cầu lông sân ${session.location} ngày ${new Date(session.time).toLocaleDateString()} (${session.numberShuttlecock} cầu)`)
+      group.amount = group.amount - sumModifiedFee
+      await paymentService.recordTransactionHistoryForGroup(undefined, group, sumModifiedFee * -1, session, mongoSession, `[CỐ ĐỊNH]Thanh toán buổi đánh cầu lông sân ${session.location} ngày ${new Date(session.time).toLocaleDateString()} (-${session.numberShuttlecock} cầu/ còn ${group.numberShuttlecock})`)
     }
     await group.save({ session: mongoSession })
 
@@ -529,31 +551,6 @@ export const payBadmintonSession = async (req: Request, res: Response) => {
     mongoSession.endSession();
   }
 };
-
-
-
-// export const getTransactionHistoryByMember = async (req: Request, res: Response) => {
-//   try {
-//     const user = (req as any).user;
-//     if (user && user.id) {
-//       return new InternalErrorResponse().send(res);
-//     }
-//     let memberId = user.id.toString()
-
-//     const transactions = await TransactionHistory.find({ memberId })
-//       .sort({ createdAt: -1 }) // Mới nhất lên đầu
-//       .populate('sessionId', 'time location') // Nếu muốn thông tin buổi chơi
-//       .lean();
-
-//     res.status(200).json({
-//       message: 'Lấy lịch sử giao dịch thành công',
-//       data: transactions
-//     });
-//   } catch (err) {
-//     console.error('Lỗi khi lấy lịch sử giao dịch:', err);
-//     res.status(500).json({ message: 'Lỗi server' });
-//   }
-// };
 
 export const getTransactionHistoryByMember = async (req: Request, res: Response) => {
   try {
@@ -644,39 +641,67 @@ export async function mapParticipantsRequestToParticipant(
   shuttlecockFee: number,
   extraFee: number
 ): Promise<Participant[]> {
-  // Lấy tất cả member documents theo memberId string
   const memberIds = participantsRequest.map(p => p.memberId);
   const members = await Member.find({ _id: { $in: memberIds } });
 
-  // Tạo map từ memberId string sang MemberDocument
   const memberMap = new Map<string, MemberDocument>();
   members.forEach(m => {
     memberMap.set(m._id.toString(), m);
   });
 
-  // Lọc thành viên áp dụng các loại phí
-  const courtFeeApplied = participantsRequest.filter(p => p.isCourtFeeApplied);
-  const shuttlecockFeeApplied = participantsRequest.filter(p => p.isShuttlecockFeeApplied);
-  const extraFeeApplied = participantsRequest.filter(p => p.isExtraFeeApplied);
+  // Đếm số người được áp dụng từng loại phí (bao gồm cả sub-participants)
+  const courtFeeApplied = participantsRequest.reduce((count, p) => {
+    return count + (p.isCourtFeeApplied ? 1 : 0) +
+      (p.participants?.filter(sub => sub.isCourtFeeApplied).length || 0);
+  }, 0);
 
-  // Tạo danh sách Participant đầy đủ
-  return participantsRequest.map(p => {
+  const shuttlecockFeeApplied = participantsRequest.reduce((count, p) => {
+    return count + (p.isShuttlecockFeeApplied ? 1 : 0) +
+      (p.participants?.filter(sub => sub.isShuttlecockFeeApplied).length || 0);
+  }, 0);
+
+  const extraFeeApplied = participantsRequest.reduce((count, p) => {
+    return count + (p.isExtraFeeApplied ? 1 : 0) +
+      (p.participants?.filter(sub => sub.isExtraFeeApplied).length || 0);
+  }, 0);
+
+  // Tính phí cho mỗi người sử dụng splitFeeEvenlyInt
+  const courtFeeList = splitFeeEvenlyInt(courtFee, courtFeeApplied);
+  const shuttlecockFeeList = splitFeeEvenlyInt(shuttlecockFee, shuttlecockFeeApplied);
+  const extraFeeList = splitFeeEvenlyInt(extraFee, extraFeeApplied);
+
+  let courtIndex = 0;
+  let shuttleIndex = 0;
+  let extraIndex = 0;
+
+  return participantsRequest.map((p) => {
     const memberDoc = memberMap.get(p.memberId);
     if (!memberDoc) {
       throw new Error(`Member with ID ${p.memberId} not found`);
     }
+
+    const courtShare = p.isCourtFeeApplied ? courtFeeList[courtIndex++] : 0;
+    const shuttleShare = p.isShuttlecockFeeApplied ? shuttlecockFeeList[shuttleIndex++] : 0;
+    const extraShare = p.isExtraFeeApplied ? extraFeeList[extraIndex++] : 0;
 
     return {
       memberId: memberDoc,
       isCourtFeeApplied: p.isCourtFeeApplied,
       isShuttlecockFeeApplied: p.isShuttlecockFeeApplied,
       isExtraFeeApplied: p.isExtraFeeApplied,
-      // Tính phí chia đều
-      courtFee: p.isCourtFeeApplied && courtFeeApplied.length > 0 ? courtFee / courtFeeApplied.length : 0,
-      shuttlecockFee: p.isShuttlecockFeeApplied && shuttlecockFeeApplied.length > 0 ? shuttlecockFee / shuttlecockFeeApplied.length : 0,
-      extraFee: p.isExtraFeeApplied && extraFeeApplied.length > 0 ? extraFee / extraFeeApplied.length : 0,
-      // Lấy modifiedFee từ client (hoặc 0 nếu không có)
+      courtFee: courtShare,
+      shuttlecockFee: shuttleShare,
+      extraFee: extraShare,
       modifiedFee: p.modifiedFee ?? 0,
+      subParticipants: p.participants?.map(sub => ({
+        name: sub.name,
+        isCourtFeeApplied: sub.isCourtFeeApplied,
+        isShuttlecockFeeApplied: sub.isShuttlecockFeeApplied,
+        isExtraFeeApplied: sub.isExtraFeeApplied,
+        courtFee: sub.isCourtFeeApplied ? courtFeeList[courtIndex++] : 0,
+        shuttlecockFee: sub.isShuttlecockFeeApplied ? shuttlecockFeeList[shuttleIndex++] : 0,
+        extraFee: sub.isExtraFeeApplied ? extraFeeList[extraIndex++] : 0
+      })) || []
     };
   });
 }

@@ -2,16 +2,23 @@ import mongoose, { Schema, Document } from 'mongoose';
 import { MemberDocument } from './Member';
 
 export interface Participant {
-  memberId: MemberDocument; // ID của thành viên
-  courtFee: number; // Số tiền phí sân
-  shuttlecockFee: number; // Số tiền phí cầu
-  extraFee: number; // Số tiền phí khác (ví dụ: huấn luyện viên)
+  memberId: MemberDocument;
+  courtFee: number;
+  shuttlecockFee: number;
+  extraFee: number;
   modifiedFee: number;
-
-  // Các trường boolean để xác định liệu có tính phí hay không
-  isCourtFeeApplied: boolean; // Phí sân có được áp dụng không
-  isShuttlecockFeeApplied: boolean; // Phí cầu có được áp dụng không
-  isExtraFeeApplied: boolean; // Phí khác có được áp dụng không
+  isCourtFeeApplied: boolean;
+  isShuttlecockFeeApplied: boolean;
+  isExtraFeeApplied: boolean;
+  subParticipants?: {
+    name: string;
+    isCourtFeeApplied: boolean;
+    isShuttlecockFeeApplied: boolean;
+    isExtraFeeApplied: boolean;
+    courtFee: number;
+    shuttlecockFee: number;
+    extraFee: number;
+  }[];
 }
 
 export interface BadmintonSession extends Document {
@@ -46,13 +53,23 @@ const badmintonSessionSchema = new Schema({
     {
       _id: false,
       memberId: { type: mongoose.Schema.Types.ObjectId, ref: 'Member', required: true },
-      courtFee: { type: Number, default: 0 }, // Phí sân
-      shuttlecockFee: { type: Number, default: 0 }, // Phí cầu
-      extraFee: { type: Number, default: 0 }, // Phí khác
-      modifiedFee: { type: Number, default: 0 }, // Phí khác
-      isCourtFeeApplied: { type: Boolean, default: false }, // Có áp dụng phí sân không
-      isShuttlecockFeeApplied: { type: Boolean, default: false }, // Có áp dụng phí cầu không
-      isExtraFeeApplied: { type: Boolean, default: false }, // Có áp dụng phí khác không
+      courtFee: { type: Number, default: 0 },
+      shuttlecockFee: { type: Number, default: 0 },
+      extraFee: { type: Number, default: 0 },
+      modifiedFee: { type: Number, default: 0 },
+      isCourtFeeApplied: { type: Boolean, default: false },
+      isShuttlecockFeeApplied: { type: Boolean, default: false },
+      isExtraFeeApplied: { type: Boolean, default: false },
+      subParticipants: [{
+        _id: false,
+        name: { type: String, required: true },
+        isCourtFeeApplied: { type: Boolean, default: false },
+        isShuttlecockFeeApplied: { type: Boolean, default: false },
+        isExtraFeeApplied: { type: Boolean, default: false },
+        courtFee: { type: Number, default: 0 },
+        shuttlecockFee: { type: Number, default: 0 },
+        extraFee: { type: Number, default: 0 }
+      }]
     }
   ],
   extraFee: { type: Number, required: true, default: 0 },

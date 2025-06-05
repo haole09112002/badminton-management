@@ -49,19 +49,16 @@ export const login = async (req: Request, res: Response) => {
         maxAge: 7 * 24 * 60 * 60 * 1000 // 7 ngày
     });
 
-    return res.json({ accessToken });
+    return res.json({ accessToken, refreshToken });
 };
 
 
 export const refreshTokenHandler = async (req: Request, res: Response): Promise<Response> => {
-    console.log(JSON.stringify(req.cookies))
-    const token = req.cookies.refreshToken;
-
-    if (!token) return res.status(401).json({ message: 'Không có refresh token' });
-
+    const { refreshToken } = req.body;
+    if (!refreshToken) return res.status(401).json({ message: 'Không có refresh token' });
     try {
-        const decoded = jwt.verify(token, JWT_REFRESH_SECRET) as any;
-        const newAccessToken = generateAccessToken({ id: decoded.id, name: decoded.name });
+        const decoded = jwt.verify(refreshToken, JWT_REFRESH_SECRET) as any;
+        const newAccessToken = generateAccessToken({ id: decoded.id, name: decoded.name, role: decoded.role });
         return res.json({ accessToken: newAccessToken });
     } catch (err) {
         return res.status(403).json({ message: 'Refresh token không hợp lệ' });

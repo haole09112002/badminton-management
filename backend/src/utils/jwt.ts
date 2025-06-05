@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions, Secret } from 'jsonwebtoken';
 import {
     JWT_ACCESS_SECRET,
     JWT_REFRESH_SECRET,
@@ -7,9 +7,11 @@ import {
 } from '../config/jwt';
 
 export function generateAccessToken(payload: object) {
-    return jwt.sign(payload, JWT_ACCESS_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRES_IN });
+    const options: SignOptions = { expiresIn: ACCESS_TOKEN_EXPIRES_IN as jwt.SignOptions['expiresIn'] };
+    return jwt.sign(payload, JWT_ACCESS_SECRET as Secret, options);
 }
 
 export function generateRefreshToken(payload: object) {
-    return jwt.sign(payload, JWT_REFRESH_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRES_IN });
+    const options: SignOptions = { expiresIn: REFRESH_TOKEN_EXPIRES_IN as jwt.SignOptions['expiresIn'] };
+    return jwt.sign(payload, JWT_REFRESH_SECRET as Secret, options);
 }

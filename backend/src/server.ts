@@ -7,6 +7,11 @@ import cookieParser from 'cookie-parser';
 
 dotenv.config();
 
+// Debug: Log environment variables
+console.log('Environment variables loaded:');
+console.log('JWT_ACCESS_SECRET:', process.env.JWT_ACCESS_SECRET ? 'Set' : 'Not set');
+console.log('JWT_REFRESH_SECRET:', process.env.JWT_REFRESH_SECRET ? 'Set' : 'Not set');
+
 const app = express();
 app.use(cors());
 app.use(cookieParser());

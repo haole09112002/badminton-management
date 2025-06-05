@@ -112,10 +112,9 @@ export const payForShuttlecockFee = async (req: Request, res: Response) => {
         if (shuttlecockFee > team.amount) {
             return new BadRequestResponse('Nhóm không đủ tiền mua cầu, vui lòng nạp tiền').send(res);
         }
-        let quantity = numberShuttlecock ?? 12
-        let message = `Thanh toán ${shuttlecockFee} cho ${quantity} quả cầu`;
-        team.numberShuttlecock = team.numberShuttlecock + quantity
-        team.shuttlecockFee = team.shuttlecockFee + shuttlecockFee
+        let message = `Thanh toán ${shuttlecockFee} cho ${numberShuttlecock.toString()} quả cầu`;
+        team.numberShuttlecock = Number(team.numberShuttlecock) + Number(numberShuttlecock)
+        team.shuttlecockFee = Number(team.shuttlecockFee) + Number(shuttlecockFee)
         await PaymentService.updateTeamBalance(team, shuttlecockFee * -1, session);
         await PaymentService.recordTransactionHistoryForGroup(undefined, team, shuttlecockFee * -1, undefined, session, message);
         await session.commitTransaction();
