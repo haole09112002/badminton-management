@@ -555,8 +555,9 @@ export const payBadmintonSession = async (req: Request, res: Response) => {
       group.amount = group.amount - totalFee
       await paymentService.recordTransactionHistoryForGroup(undefined, group, totalFee * -1, session, mongoSession, `[VÃNG LAI]Thanh toán buổi đánh cầu lông sân ${session.location} ngày  ${formatDateVi(new Date)} (-${session.numberShuttlecock} cầu/ còn ${group.numberShuttlecock})`)
     } else {
-      group.amount = group.amount - sumModifiedFee
-      await paymentService.recordTransactionHistoryForGroup(undefined, group, sumModifiedFee * -1, session, mongoSession, `[CỐ ĐỊNH]Thanh toán buổi đánh cầu lông sân ${session.location} ngày ${formatDateVi(new Date)} (-${session.numberShuttlecock} cầu/ còn ${group.numberShuttlecock})`)
+      let totalFee = session.extraFee + sumModifiedFee
+      group.amount = group.amount - totalFee
+      await paymentService.recordTransactionHistoryForGroup(undefined, group, totalFee * -1, session, mongoSession, `[CỐ ĐỊNH]Thanh toán buổi đánh cầu lông sân ${session.location} ngày ${formatDateVi(new Date)} (-${session.numberShuttlecock} cầu/ còn ${group.numberShuttlecock})`)
     }
     await group.save({ session: mongoSession })
 
