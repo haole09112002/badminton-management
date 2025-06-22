@@ -23,7 +23,7 @@ api.interceptors.response.use(
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
     // Kiểm tra nếu là request refresh token thì không retry
-    if (originalRequest.url === '/auth/refreshToken') {
+    if (originalRequest.url === '/auth/refreshToken' || originalRequest.url === '/auth/login') {
       return Promise.reject(error);
     }
 
