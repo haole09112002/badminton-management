@@ -6,7 +6,7 @@ export interface MemberDocument extends mongoose.Document {
   name: string;
   balance: number;
   email: string;
-  password?: string;
+  password: string;
   role: 'user' | 'lead' | 'admin';
   comparePassword: (candidatePassword: string) => Promise<boolean>;
 }
@@ -24,21 +24,22 @@ const memberSchema = new mongoose.Schema({
 }, {
   toJSON: {
     transform(doc, ret) {
-      delete ret.password;
+      delete (ret as any).password;
       return ret;
     }
   },
   toObject: {
     transform(doc, ret) {
-      delete ret.password;
+      delete (ret as any).password;
       return ret;
     }
   }
 });
-memberSchema.methods.comparePassword = async function (candidatePassword: string) {
-  if (!this.password) return false;
-  return bcrypt.compare(candidatePassword, this.password);
-};
+memberSchema.pre<MemberDocument>('save', async function (next) {
+  if (!this.isModified('password')) return next();
+  this.password = await bcrypt.hash(this.password, 10);
+  next();
+});
 
 memberSchema.methods.comparePassword = async function (candidatePassword: string) {
   return bcrypt.compare(candidatePassword, this.password);
