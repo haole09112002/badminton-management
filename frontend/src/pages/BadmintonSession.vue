@@ -1,8 +1,8 @@
 <template>
   <div class="home">
     <div v-if="appStore.isLeadOrAdminPermission">
-      <v-btn class="text-caption mb-1 mt-4" color="primary" size="small" elevation="1" variant="tonal"
-        @click="handleCreateNewSession">
+      <v-btn class="btn-create-session text-caption mb-1 mt-4" color="primary" size="large" elevation="3"
+        variant="elevated" rounded="xl" @click="handleCreateNewSession" prepend-icon="mdi-plus">
         Tạo mới
       </v-btn>
       <v-divider :thickness="2" color="success" class="mt-4 mb-4 border-opacity-100"></v-divider>
@@ -109,98 +109,250 @@ const isUpcomingSession = (session: BadmintonSession): boolean => {
 
 <style lang="scss" scoped>
 .home {
-  text-align: center;
-  padding: 20px;
+  padding: 24px 8px 32px 8px;
+  max-width: 1200px;
+  margin: 0 auto;
+  background: #f8fafc;
+  min-height: 100vh;
 }
 
-.summary {
-  display: flex;
-  flex-direction: column;
+.v-btn {
+  font-weight: 600;
+  letter-spacing: 0.5px;
 }
 
-.d-sm-grid {
-  display: grid !important;
-}
-
-/* Ẩn session-list cho mobile */
-.d-none {
-  display: none !important;
-}
-
-/* Hiển thị session list dưới dạng list cho mobile */
-.session-list-mobile {
-  display: block;
-  // margin-bottom: 8px;
-}
-
-.session-list-mobile>* {
-  margin-bottom: 8px;
-  /* Khoảng cách giữa các mục */
-}
-
-.loading-overlay {
-  // position: absolute;
-  // top: 0;
-  // left: 0;
-  width: 100%;
-  height: 100%;
-  // background: rgba(0, 0, 0, 0.3); // nền mờ
-  min-height: 100px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 10; // nhớ cao hơn nội dung bên trong
-}
-
-/* Ẩn phần list trên các màn hình lớn */
-
-.upcoming-session {
-  border: 2px solid #F44336 !important;
-  position: relative;
-
-  &::before {
-    content: "Sắp diễn ra";
-    position: absolute;
-    top: 0;
-    right: 0;
-    background-color: #F44336;
-    color: white;
-    padding: 2px 8px;
-    font-size: 12px;
-    border-bottom-left-radius: 4px;
-  }
-}
-
-.today-session {
-  border: 2px solid #2196F3 !important;
-  position: relative;
-
-  &::before {
-    content: "Hôm nay";
-    position: absolute;
-    top: 0;
-    right: 0;
-    background-color: #2196F3;
-    color: white;
-    padding: 2px 8px;
-    font-size: 12px;
-    border-bottom-left-radius: 4px;
-  }
-}
-
-.completed-session {
-  opacity: 0.6;
-  filter: grayscale(0.5);
-  transition: opacity 0.3s ease;
+.btn-create-session {
+  font-weight: 700 !important;
+  font-size: 1.08rem !important;
+  letter-spacing: 0.5px;
+  padding: 0 28px !important;
+  border-radius: 28px !important;
+  min-width: 140px;
+  box-shadow: 0 4px 16px 0 rgba(25, 118, 210, 0.10);
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  background: linear-gradient(90deg, #1976d2 80%, #42a5f5 100%) !important;
+  color: #fff !important;
+  text-transform: none;
 
   &:hover {
-    opacity: 0.8;
+    background: linear-gradient(90deg, #1565c0 80%, #64b5f6 100%) !important;
+    color: #fff !important;
+    box-shadow: 0 8px 24px 0 rgba(25, 118, 210, 0.18);
+  }
+}
+
+.session-list,
+.mobile-session-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  justify-content: center;
+}
+
+.session-list {
+  @media (max-width: 600px) {
+    display: none !important;
   }
 }
 
 .mobile-session-list {
-  >div:last-child {
-    margin-bottom: 0 !important;
+  flex-direction: column;
+  gap: 16px;
+
+  @media (min-width: 600px) {
+    display: none !important;
+  }
+}
+
+/* Card style cho SessionItem */
+:deep(.session-card-modern) {
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 4px 24px 0 rgba(60, 72, 88, 0.10);
+  padding: 22px 22px 18px 22px;
+  transition: box-shadow 0.2s, transform 0.2s;
+  border: 1.5px solid #e3e8ef;
+  min-width: 260px;
+  max-width: 420px;
+  margin: 0 auto;
+  position: relative;
+
+  &:hover {
+    box-shadow: 0 8px 32px 0 rgba(25, 118, 210, 0.13);
+    transform: translateY(-2px) scale(1.015);
+    border-color: #1976d2;
+  }
+}
+
+/* Card style cho SessionItem - Kiểu dọc */
+:deep(.session-card-vertical) {
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 4px 24px 0 rgba(60, 72, 88, 0.10);
+  padding: 20px 20px 16px 20px;
+  transition: box-shadow 0.2s, transform 0.2s;
+  border: 1.5px solid #e3e8ef;
+  min-width: 320px;
+  max-width: 420px;
+  min-height: 320px;
+  height: 340px;
+  margin: 0 auto;
+  position: relative;
+
+  &:hover {
+    box-shadow: 0 8px 32px 0 rgba(25, 118, 210, 0.13);
+    transform: translateY(-2px) scale(1.015);
+    border-color: #1976d2;
+  }
+}
+
+/* Trạng thái đặc biệt */
+.upcoming-session:deep(.session-card-modern) {
+  border-color: #ff9800 !important;
+
+  &::before {
+    content: "Sắp diễn ra";
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    background: linear-gradient(90deg, #ff9800 80%, #fff3e0 100%);
+    color: #fff;
+    font-weight: 600;
+    font-size: 12px;
+    padding: 2px 10px;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(255, 152, 0, 0.08);
+    z-index: 2;
+  }
+}
+
+.today-session:deep(.session-card-modern) {
+  border-color: #1976d2 !important;
+
+  &::before {
+    content: "Hôm nay";
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    background: linear-gradient(90deg, #1976d2 80%, #e3f2fd 100%);
+    color: #fff;
+    font-weight: 600;
+    font-size: 12px;
+    padding: 2px 10px;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(25, 118, 210, 0.08);
+    z-index: 2;
+  }
+}
+
+.completed-session:deep(.session-card-modern) {
+  opacity: 0.7;
+  filter: grayscale(0.2);
+  border-color: #bdbdbd !important;
+
+  &::before {
+    content: "Đã kết thúc";
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    background: linear-gradient(90deg, #757575 80%, #eeeeee 100%);
+    color: #fff;
+    font-weight: 600;
+    font-size: 12px;
+    padding: 2px 10px;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(117, 117, 117, 0.08);
+    z-index: 2;
+  }
+}
+
+/* Trạng thái đặc biệt - Kiểu dọc */
+.upcoming-session:deep(.session-card-vertical) {
+  border-color: #ff9800 !important;
+
+  &::before {
+    content: "Sắp diễn ra";
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    background: linear-gradient(90deg, #ff9800 80%, #fff3e0 100%);
+    color: #fff;
+    font-weight: 600;
+    font-size: 12px;
+    padding: 2px 10px;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(255, 152, 0, 0.08);
+    z-index: 2;
+  }
+}
+
+.today-session:deep(.session-card-vertical) {
+  border-color: #1976d2 !important;
+
+  &::before {
+    content: "Hôm nay";
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    background: linear-gradient(90deg, #1976d2 80%, #e3f2fd 100%);
+    color: #fff;
+    font-weight: 600;
+    font-size: 12px;
+    padding: 2px 10px;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(25, 118, 210, 0.08);
+    z-index: 2;
+  }
+}
+
+.completed-session:deep(.session-card-vertical) {
+  opacity: 0.7;
+  filter: grayscale(0.2);
+  border-color: #bdbdbd !important;
+
+  &::before {
+    content: "Đã kết thúc";
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    background: linear-gradient(90deg, #757575 80%, #eeeeee 100%);
+    color: #fff;
+    font-weight: 600;
+    font-size: 12px;
+    padding: 2px 10px;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(117, 117, 117, 0.08);
+    z-index: 2;
+  }
+}
+
+.loading-overlay {
+  width: 100%;
+  min-height: 120px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: transparent;
+  z-index: 10;
+}
+
+@media (max-width: 600px) {
+  .home {
+    padding: 10px 2px 24px 2px;
+  }
+
+  :deep(.session-card-modern) {
+    min-width: 90vw;
+    max-width: 98vw;
+    padding: 14px 8px 14px 12px;
+  }
+
+  :deep(.session-card-vertical) {
+    padding: 12px 6px 12px 8px;
+    min-width: 90vw;
+    max-width: 98vw;
+    min-height: 240px;
+    height: 270px;
   }
 }
 </style>
