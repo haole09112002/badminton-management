@@ -21,6 +21,23 @@ export const formatDateVi = (date: Date | string | null | undefined): string => 
   });
 };
 
+export const formatDateTimeVN = (date: Date | string | null | undefined): string => {
+  if (!date) return "";
+
+  const parsedDate = typeof date === "string" ? new Date(date) : date;
+
+  if (isNaN(parsedDate.getTime())) return ""; // Kiểm tra date không hợp lệ
+
+  return parsedDate.toLocaleString("vi-VN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour12: false, // Hiển thị 24h
+  });
+};
+
 
 export const getStatusCf = (status: String) => {
   switch (status) {

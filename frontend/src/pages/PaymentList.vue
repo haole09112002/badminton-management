@@ -14,15 +14,16 @@
     </v-row>
 
     <v-data-table-server :headers="headers" :items="payments" v-model:options="options" :items-length="totalItems"
-      :loading="tableLoading" :items-per-page-options="[5, 10, 20, 50]" @update:options="fetchPayments" density="compact"
-      class="elevation-1" show-current-page>
+      :loading="tableLoading" :items-per-page-options="[5, 10, 20, 50]" @update:options="fetchPayments"
+      density="compact" class="elevation-1" show-current-page>
       <template v-if="appStore.isLeadOrAdminPermission" #item.actions="{ item }">
-        <v-btn :disabled="item.status === 'accepted'" color="success" size="small" @click="accept(item)" class="me-2"
-          variant="outlined">
+        <v-btn :disabled="item.status === 'accepted' || item.status === 'rejected'" color="success" size="small"
+          @click="accept(item)" class="me-2" variant="outlined">
           Chấp nhận
         </v-btn>
 
-        <v-btn :disabled="item.status === 'accepted'" color="error" size="small" @click="cancel(item)" variant="outlined">
+        <v-btn :disabled="item.status === 'accepted' || item.status === 'rejected'" color="error" size="small"
+          @click="cancel(item)" variant="outlined">
           Hủy
         </v-btn>
       </template>

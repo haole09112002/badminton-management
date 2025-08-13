@@ -13,7 +13,7 @@ import type {
   ShuttlecockFeeRequest
 } from '../types/requests'
 import { BadmintonSession, BadmintonSessionWaringResponse, BadmintonTeamResponse, MemberBalance, PaginationResult, PaymentResponse } from '../types/responses'
-
+import { formatCurrency, formatDateTimeVN, formatDateVi } from '../utils/index'
 export const useAppStore = defineStore('app', () => {
   // STATE
   const isLoading = ref(false)
@@ -71,7 +71,13 @@ export const useAppStore = defineStore('app', () => {
     status?: string
   }): Promise<PaginationResult<PaymentResponse>> {
     const response = await api.get<ApiResponse<PaginationResult<PaymentResponse>>>('/payments/me', { params })
-    return response.data.data
+    var data = response.data.data
+    data.data.map(item => {
+      item.date = formatDateTimeVN(item.date)
+      item.amount = formatCurrency(Number(item.amount))
+    })
+
+    return data
   }
 
   async function createPayment(param: PaymentRequest): Promise<PaymentResponse> {

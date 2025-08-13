@@ -78,9 +78,9 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <v-data-table-server class="mt-4" :headers="headers" :items="tableData" :items-length="totalCount" :loading="loading"
-      density="compact" :mobile-breakpoint="0" v-model:options="options" :items-per-page-options="[5, 10, 20, 50]"
-      show-current-page @update:options="fetchTransactions">
+    <v-data-table-server class="mt-4" :headers="headers" :items="tableData" :items-length="totalCount"
+      :loading="loading" density="compact" :mobile-breakpoint="0" v-model:options="options"
+      :items-per-page-options="[5, 10, 20, 50]" show-current-page @update:options="fetchTransactions">
       <template #top>
         <div class="d-flex justify-center align-center px-4 py-2">
           <h3 class="text-h6">Biến động số dư của nhóm</h3>
@@ -109,10 +109,7 @@
       </template>
     </v-data-table-server>
     <v-data-table class="mt-4" :headers="memberSeaders" :items="members" :loading="loading" density="compact"
-      :mobile-breakpoint="0" hide-default-footer>
-      <!-- <template v-slot:loading>
-        <v-skeleton-loader type="table-row@5" density="compact"></v-skeleton-loader>
-      </template> -->
+      :items-per-page="-1" :mobile-breakpoint="0" hide-default-footer>
       <template #top>
         <div class="d-flex justify-center align-center px-4 py-2">
           <h3 class="text-h6">Danh sách thành viên</h3>
@@ -136,11 +133,6 @@
         </div>
       </template>
     </v-data-table>
-    <!-- <div class="d-flex justify-center mt-2">
-      <div class="font-weight-bold">
-        Tổng số dư: {{ formatCurrency(totalBalance) }}
-      </div>
-    </div> -->
   </div>
 </template>
 <script setup lang="ts">
@@ -271,6 +263,7 @@ const handleCreate = async () => {
 const fetchAllMemberBalance = async () => {
   try {
     const res = await appStore.fetchAllMembers()
+    console.log(res.length)
     members.value = res
   } catch (error) {
     console.error('Lỗi khi tải thông tin member:', error)

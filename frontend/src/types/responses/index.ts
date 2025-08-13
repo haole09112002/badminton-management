@@ -72,7 +72,7 @@ export interface PaginationResult<T> {
 
 export interface PaymentResponse {
   _id: string;
-  amount: number;
+  amount: number | string;
   date: string;
   note?: string;
   memberId: string;
