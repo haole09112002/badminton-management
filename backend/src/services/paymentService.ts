@@ -122,7 +122,7 @@ export async function getPaymentById(paymentId: string, session: ClientSession) 
 }
 
 export async function getMemberById(memberId: string, session: ClientSession) {
-    const member = await Member.findById(memberId).session(session);
+    const member = await Member.findOne({ _id: memberId, deletedAt: null }).session(session);
     if (!member) {
         throw new BadRequestError('Member not found');
     }

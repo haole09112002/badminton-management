@@ -8,6 +8,7 @@ export interface MemberDocument extends mongoose.Document {
   email: string;
   password: string;
   role: 'user' | 'lead' | 'admin';
+  deletedAt?: Date;
   comparePassword: (candidatePassword: string) => Promise<boolean>;
 }
 
@@ -20,7 +21,8 @@ const memberSchema = new mongoose.Schema({
     type: String,
     enum: ['user', 'lead', 'admin'],
     default: 'user',
-  }
+  },
+  deletedAt: { type: Date, default: null }
 }, {
   toJSON: {
     transform(doc, ret) {
@@ -35,6 +37,10 @@ const memberSchema = new mongoose.Schema({
     }
   }
 });
+
+// Index cho soft delete
+memberSchema.index({ deletedAt: 1 });
+
 memberSchema.pre<MemberDocument>('save', async function (next) {
   if (!this.isModified('password')) return next();
   this.password = await bcrypt.hash(this.password, 10);

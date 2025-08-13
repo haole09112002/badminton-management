@@ -28,6 +28,7 @@ export const createBadmintonSession = async (req: Request, res: Response) => {
     if (participants.length > 0) {
       const validMembers = await Member.find({
         _id: { $in: participants.map(p => p.memberId) },
+        deletedAt: null
       });
 
       if (validMembers.length !== participants.length) {
@@ -226,8 +227,8 @@ export const getBadmintonSessions = async (req: Request, res: Response) => {
 
 export const getAllMembersWithBalance = async (req: Request, res: Response) => {
   try {
-    // Lấy tất cả các thành viên
-    const members = await Member.find();
+    // Lấy tất cả các thành viên (chưa bị xóa)
+    const members = await Member.find({ deletedAt: null });
 
     // Lấy danh sách tất cả memberId từ các thành viên
     const memberIds = members.map((member: any) => new mongoose.Types.ObjectId(member._id));
@@ -308,6 +309,7 @@ export const updateBadmintonSession = async (req: Request, res: Response) => {
     if (participants.length > 0) {
       const validMembers = await Member.find({
         _id: { $in: participants.map(p => p.memberId) },
+        deletedAt: null
       });
 
       if (validMembers.length !== participants.length) {
@@ -396,6 +398,7 @@ export const confirmBadmintonSession = async (req: Request, res: Response) => {
     if (participants.length > 0) {
       const validMembers = await Member.find({
         _id: { $in: participants.map(p => p.memberId) },
+        deletedAt: null
       });
 
       if (validMembers.length !== participants.length) {
@@ -483,7 +486,7 @@ export const payBadmintonSession = async (req: Request, res: Response) => {
     }
 
     const memberIds = session.participants.map(p => p.memberId);
-    const members = await Member.find({ _id: { $in: memberIds } }).session(mongoSession);
+    const members = await Member.find({ _id: { $in: memberIds }, deletedAt: null }).session(mongoSession);
 
     if (members.length !== session.participants.length) {
       await mongoSession.abortTransaction();
@@ -669,7 +672,7 @@ export async function mapParticipantsRequestToParticipant(
   extraFee: number
 ): Promise<Participant[]> {
   const memberIds = participantsRequest.map(p => p.memberId);
-  const members = await Member.find({ _id: { $in: memberIds } });
+  const members = await Member.find({ _id: { $in: memberIds }, deletedAt: null });
 
   const memberMap = new Map<string, MemberDocument>();
   members.forEach(m => {

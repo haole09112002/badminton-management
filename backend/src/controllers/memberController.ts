@@ -6,13 +6,14 @@ import { AuthenticatedRequest } from '../types/express';
 // Lấy danh sách thành viên
 export const getMembers = async (req: Request, res: Response) => {
   try {
-    const members = await Member.find({});
+    const members = await Member.find({ deletedAt: null });
     const result = members.map(m => {
       return {
         id: m._id,
         name: m.name,
         balance: m.balance,
-        email: m.email
+        email: m.email,
+        role: m.role
       }
     });
     return new SuccessResponse('ok', result).send(res);
@@ -20,12 +21,13 @@ export const getMembers = async (req: Request, res: Response) => {
     return new InternalErrorResponse().send(res);
   }
 };
+
 export const getUserProfile = async (req: AuthenticatedRequest, res: Response) => {
   try {
     if (!req.user || !req.user.id) {
       return new BadRequestResponse('Không tìm thấy user').send(res);
     }
-    const existing = await Member.findById(req.user.id);
+    const existing = await Member.findOne({ _id: req.user.id, deletedAt: null });
     if (!existing) {
       return new BadRequestResponse('Không tìm thấy user').send(res);
     }
@@ -41,12 +43,16 @@ export const getUserProfile = async (req: AuthenticatedRequest, res: Response) =
     return new InternalErrorResponse().send(res);
   }
 }
+
 // Thêm thành viên
 export const addMember = async (req: Request, res: Response) => {
   try {
+    console.log('Add member request body:', req.body)
     const { name, email, role } = req.body;
     const password = "123456"
-    const count = await Member.countDocuments({ email });
+    const balance = 0 // Luôn set balance = 0 cho tài khoản mới
+
+    const count = await Member.countDocuments({ email, deletedAt: null });
     if (count > 0) {
       return res.status(400).json({ message: 'Email đã được sử dụng' });
     }
@@ -55,14 +61,129 @@ export const addMember = async (req: Request, res: Response) => {
       email,
       password,
       role, // optional: chỉ lead/admin mới được set role
+      balance
     });
-    res.status(201).json(newMember);
+
+    console.log('Created member:', newMember)
+
+    return new SuccessResponse('Thêm thành viên thành công', {
+      id: newMember._id,
+      name: newMember.name,
+      email: newMember.email,
+      role: newMember.role,
+      balance: newMember.balance
+    }).send(res);
   } catch (error: any) {
+    console.error('Error adding member:', error)
     if (error.code === 11000 && error.keyPattern.email) {
       return res.status(400).json({ message: 'Email đã tồn tại' });
     }
 
     console.log(error)
-    res.status(400).send('Lỗi thêm thành viên');
+    return new InternalErrorResponse().send(res);
+  }
+};
+
+// Xóa thành viên (soft delete)
+export const deleteMember = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // Kiểm tra user có tồn tại không
+    const member = await Member.findOne({ _id: id, deletedAt: null });
+    if (!member) {
+      return new BadRequestResponse('Không tìm thấy người dùng').send(res);
+    }
+
+    // Soft delete - set deletedAt
+    const deletedMember = await Member.findByIdAndUpdate(
+      id,
+      { deletedAt: new Date() },
+      { new: true }
+    );
+
+    console.log('Soft deleted member:', deletedMember)
+
+    return new SuccessResponse('Xóa người dùng thành công', null).send(res);
+  } catch (error) {
+    console.log(error);
+    return new InternalErrorResponse().send(res);
+  }
+};
+
+// Cập nhật thành viên
+export const updateMember = async (req: Request, res: Response) => {
+  try {
+    console.log('Update member request:', req.params, req.body)
+    const { id } = req.params;
+    const { name, role, balance } = req.body;
+
+    // Kiểm tra user có tồn tại không
+    const member = await Member.findOne({ _id: id, deletedAt: null });
+    if (!member) {
+      return new BadRequestResponse('Không tìm thấy người dùng').send(res);
+    }
+
+    // Cập nhật thông tin
+    const updatedMember = await Member.findByIdAndUpdate(
+      id,
+      { name, role, balance },
+      { new: true }
+    );
+
+    if (!updatedMember) {
+      return new BadRequestResponse('Không thể cập nhật người dùng').send(res);
+    }
+
+    console.log('Updated member:', updatedMember)
+
+    return new SuccessResponse('Cập nhật thành công', {
+      id: updatedMember._id,
+      name: updatedMember.name,
+      email: updatedMember.email,
+      role: updatedMember.role,
+      balance: updatedMember.balance
+    }).send(res);
+  } catch (error) {
+    console.error('Error updating member:', error)
+    console.log(error);
+    return new InternalErrorResponse().send(res);
+  }
+};
+
+// Khôi phục thành viên đã bị xóa
+export const restoreMember = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // Kiểm tra user có tồn tại và đã bị xóa không
+    const member = await Member.findOne({ _id: id, deletedAt: { $ne: null } });
+    if (!member) {
+      return new BadRequestResponse('Không tìm thấy người dùng đã bị xóa').send(res);
+    }
+
+    // Khôi phục user - set deletedAt = null
+    const restoredMember = await Member.findByIdAndUpdate(
+      id,
+      { deletedAt: null },
+      { new: true }
+    );
+
+    if (!restoredMember) {
+      return new BadRequestResponse('Không thể khôi phục người dùng').send(res);
+    }
+
+    console.log('Restored member:', restoredMember)
+
+    return new SuccessResponse('Khôi phục người dùng thành công', {
+      id: restoredMember._id,
+      name: restoredMember.name,
+      email: restoredMember.email,
+      role: restoredMember.role,
+      balance: restoredMember.balance
+    }).send(res);
+  } catch (error) {
+    console.log(error);
+    return new InternalErrorResponse().send(res);
   }
 };

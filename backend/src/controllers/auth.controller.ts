@@ -9,7 +9,7 @@ export const register = async (req: Request, res: Response) => {
     try {
         const { name, email, password } = req.body;
 
-        const existing = await Member.findOne({ email });
+        const existing = await Member.findOne({ email, deletedAt: null });
         if (existing) {
             return res.status(400).json({ message: 'Email đã được đăng ký' });
         }
@@ -27,7 +27,7 @@ export const register = async (req: Request, res: Response) => {
 export const login = async (req: Request, res: Response) => {
     const { email, password } = req.body;
     console.log(req.body)
-    const user = await Member.findOne({ email });
+    const user = await Member.findOne({ email, deletedAt: null });
     if (!user) {
         return res.status(401).json({ message: 'Email hoặc mật khẩu không đúng' });
     }

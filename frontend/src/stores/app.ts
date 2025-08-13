@@ -14,6 +14,15 @@ import type {
 } from '../types/requests'
 import { BadmintonSession, BadmintonSessionWaringResponse, BadmintonTeamResponse, MemberBalance, PaginationResult, PaymentResponse } from '../types/responses'
 import { formatCurrency, formatDateTimeVN, formatDateVi } from '../utils/index'
+
+// Interface cho create user request
+interface CreateUserRequest {
+  name: string
+  email: string
+  role: 'user' | 'lead' | 'admin'
+  balance?: number
+}
+
 export const useAppStore = defineStore('app', () => {
   // STATE
   const isLoading = ref(false)
@@ -24,9 +33,36 @@ export const useAppStore = defineStore('app', () => {
     return user.value?.role === 'lead' || user.value?.role === 'admin'
   })
 
+  const isAdminPermission = computed(() => {
+    return user.value?.role === 'admin'
+  })
+
   // ACTIONS
   async function fetchAllMembers(): Promise<Member[]> {
     const response = await api.get<ApiResponse<Member[]>>('/members')
+    return response.data.data
+  }
+
+  async function createUser(param: CreateUserRequest): Promise<Member> {
+    console.log('Creating user with params:', param)
+    const response = await api.post<ApiResponse<Member>>('/members', param)
+    console.log('Create user response:', response.data)
+    return response.data.data
+  }
+
+  async function deleteUser(userId: string): Promise<void> {
+    await api.delete<ApiResponse<void>>(`/members/${userId}`)
+  }
+
+  async function restoreUser(userId: string): Promise<Member> {
+    const response = await api.patch<ApiResponse<Member>>(`/members/${userId}/restore`)
+    return response.data.data
+  }
+
+  async function updateUser(userId: string, param: CreateUserRequest): Promise<Member> {
+    console.log('Updating user with params:', userId, param)
+    const response = await api.put<ApiResponse<Member>>(`/members/${userId}`, param)
+    console.log('Update user response:', response.data)
     return response.data.data
   }
 
@@ -124,9 +160,14 @@ export const useAppStore = defineStore('app', () => {
 
     // getters
     isLeadOrAdminPermission,
+    isAdminPermission,
 
     // actions
     fetchAllMembers,
+    createUser,
+    deleteUser,
+    restoreUser,
+    updateUser,
     createBadmintonSession,
     updateBadmintonSession,
     confirmBadmintonSession,

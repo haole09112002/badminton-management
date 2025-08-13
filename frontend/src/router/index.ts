@@ -52,6 +52,7 @@ import RegisterPage from '../pages/RegisterPage.vue'
 import TransactionHistory from '../pages/TransactionHistory.vue'
 import PaymentList from '../pages/PaymentList.vue'
 import LogoutPage from '../pages/LogoutPage.vue'
+import UserManagement from '../pages/UserManagement.vue'
 
 const routes = [
   {
@@ -81,35 +82,60 @@ const routes = [
       {
         path: '/transaction-history',
         name: 'TransactionHistory',
-        component: TransactionHistory // import RegisterPage từ file tương ứng
+        component: TransactionHistory
       },
       {
         path: '/payments',
         name: 'PaymentList',
-        component: PaymentList // import RegisterPage từ file tương ứng
+        component: PaymentList
+      },
+      {
+        path: '/user-management',
+        name: 'UserManagement',
+        component: UserManagement
       },
       {
         path: '/logout',
         name: 'Logout',
-        component: LogoutPage // import LoginPage từ file tương ứng
+        component: LogoutPage
       },
     ]
   },
   {
     path: '/login',
     name: 'Login',
-    component: LoginPage // import LoginPage từ file tương ứng
+    component: LoginPage
   },
   {
     path: '/register',
     name: 'Register',
-    component: RegisterPage // import RegisterPage từ file tương ứng
+    component: RegisterPage
   }
 ]
 
 const router = createRouter({
   history: createWebHistory(),
   routes
+})
+
+// Route guard để kiểm tra quyền admin
+router.beforeEach((to, from, next) => {
+  const token = localStorage.getItem('accessToken')
+
+  // Nếu truy cập trang user-management mà không phải admin thì chuyển về home
+  if (to.name === 'UserManagement') {
+    if (!token) {
+      next('/login')
+      return
+    }
+
+    // Kiểm tra role từ token (có thể decode JWT để lấy role)
+    // Tạm thời cho phép truy cập, sẽ kiểm tra trong component
+    next()
+    return
+  }
+
+  next()
 })
 
 export default router

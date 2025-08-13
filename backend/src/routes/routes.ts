@@ -1,5 +1,5 @@
 import express from 'express';
-import { getMembers, addMember, getUserProfile } from '../controllers/memberController';
+import { getMembers, addMember, getUserProfile, deleteMember, updateMember, restoreMember } from '../controllers/memberController';
 import { login, register, refreshTokenHandler, logout } from '../controllers/auth.controller';
 import { acceptPayment, cancelPayment, createPayment, getMyPayments } from '../controllers/paymentController';
 import { getBadmintonSessions, getAllMembersWithBalance, createBadmintonSession, updateBadmintonSession, payBadmintonSession, getTransactionHistoryByGroup, getTransactionHistoryByMember, getAllBadmintonSessions, confirmBadmintonSession } from '../controllers/badmintonSessionController';
@@ -15,6 +15,16 @@ router.get('/members', secureRoute('lead', 'admin', 'user'), asyncHandler(getMem
 
 // POST /members - thêm thành viên mới
 router.post('/members', secureRoute('lead', 'admin'), asyncHandler(addMember));
+
+// PUT /members/:id - cập nhật thành viên
+router.put('/members/:id', secureRoute('admin'), asyncHandler(updateMember));
+
+// DELETE /members/:id - xóa thành viên (soft delete)
+router.delete('/members/:id', secureRoute('admin'), asyncHandler(deleteMember));
+
+// PATCH /members/:id/restore - khôi phục thành viên đã bị xóa
+router.patch('/members/:id/restore', secureRoute('admin'), asyncHandler(restoreMember));
+
 router.get('/members/me', secureRoute('lead', 'admin', 'user'), asyncHandler(getUserProfile));
 router.post('/payments', secureRoute('lead', 'admin', 'user'), asyncHandler(createPayment));
 router.get('/payments/me', secureRoute('lead', 'admin', 'user'), asyncHandler(getMyPayments));
