@@ -1,58 +1,69 @@
 <template>
-  <v-container>
-    <v-row class="mb-4" :align="'center'" justify="start">
-      <v-col cols="12" md="4">
-        <v-select v-model="filters.status" :items="statuses" label="Trạng thái" clearable :hide-details="true"
-          density="default" @update:modelValue="fetchPayments" />
-      </v-col>
-      <v-col cols="12" md="8" class="d-flex justify-start align-center ga-4">
-        <v-btn color="primary" @click="openCreateDialog">
-          Nạp tiền
-        </v-btn>
-        <span class="text-red">&lt----- van xin mọi người hãy bấm vào đây</span>
-      </v-col>
-    </v-row>
+  <v-container class="payment-list-container" fluid>
+    <v-card class="filter-card pa-4 mb-6">
+      <v-row>
+        <v-col cols="12" md="4">
+          <v-select v-model="filters.status" :items="statuses" label="Trạng thái" clearable :hide-details="true"
+            density="comfortable" variant="outlined" @update:modelValue="fetchPayments"
+            prepend-inner-icon="mdi-filter-variant" />
+        </v-col>
+        <v-col cols="12" md="8" class="d-flex align-center gap-4">
+          <v-btn class="btn-create" color="primary" size="large" elevation="2" variant="elevated" rounded="xl"
+            @click="openCreateDialog" prepend-icon="mdi-plus">
+            Nạp tiền
+          </v-btn>
+          <span class="text-red font-italic text-caption">&lt;--- Hãy bấm vào đây để nạp tiền nhé!</span>
+        </v-col>
+      </v-row>
+    </v-card>
 
-    <v-data-table-server :headers="headers" :items="payments" v-model:options="options" :items-length="totalItems"
-      :loading="tableLoading" :items-per-page-options="[5, 10, 20, 50]" @update:options="fetchPayments"
-      density="compact" class="elevation-1" show-current-page>
-      <template v-if="appStore.isLeadOrAdminPermission" #item.actions="{ item }">
-        <v-btn :disabled="item.status === 'accepted' || item.status === 'rejected'" color="success" size="small"
-          @click="accept(item)" class="me-2" variant="outlined">
-          Chấp nhận
-        </v-btn>
+    <v-card class="table-card pa-2">
+      <v-data-table-server :headers="headers" :items="payments" v-model:options="options" :items-length="totalItems"
+        :loading="tableLoading" :items-per-page-options="[5, 10, 20, 50]" @update:options="fetchPayments"
+        density="comfortable" class="modern-table" show-current-page>
+        <template #item.amount="{ item }">
+          <span class="font-weight-bold text-blue">{{ item.amount.toLocaleString() }}</span>
+        </template>
+        <template #item.status="{ item }">
+          <v-chip :color="getStatusColor(item.status)" class="status-chip" size="small" variant="elevated">
+            {{ getStatusText(item.status) }}
+          </v-chip>
+        </template>
+        <template v-if="appStore.isLeadOrAdminPermission" #item.actions="{ item }">
+          <v-btn :disabled="item.status === 'accepted' || item.status === 'rejected'" color="success" size="small"
+            @click="accept(item)" class="me-2" variant="outlined">
+            Chấp nhận
+          </v-btn>
+          <v-btn :disabled="item.status === 'accepted' || item.status === 'rejected'" color="error" size="small"
+            @click="cancel(item)" variant="outlined">
+            Hủy
+          </v-btn>
+        </template>
+        <template v-else #item.actions>
+          -
+        </template>
+        <template #no-data>
+          <div class="text-center py-8 text-grey">Không có giao dịch nào</div>
+        </template>
+      </v-data-table-server>
+    </v-card>
 
-        <v-btn :disabled="item.status === 'accepted' || item.status === 'rejected'" color="error" size="small"
-          @click="cancel(item)" variant="outlined">
-          Hủy
-        </v-btn>
-      </template>
-      <template v-else #item.actions="{ item }">
-        -
-      </template>
-      <template #item.status="{ item }">
-        <v-chip :color="getStatusColor(item.status)" dark size="small">
-          {{ getStatusText(item.status) }}
-        </v-chip>
-      </template>
-    </v-data-table-server>
-    <v-dialog v-model="dialogCreate" max-width="500px">
+    <v-dialog v-model="dialogCreate" max-width="420px">
       <v-card>
-        <v-card-title>Nạp tiền</v-card-title>
+        <v-card-title class="text-blue font-weight-bold">Nạp tiền</v-card-title>
         <v-card-text class="d-flex flex-column justify-center align-center">
-          <span class="text-caption">Quét mã chuyển khoản rồi nhập thông tin</span>
-          <img :srcset="PAYMENT_QR_URL" class="qr-image" />
+          <span class="text-caption mb-2">Quét mã chuyển khoản rồi nhập thông tin</span>
+          <img :src="PAYMENT_QR_URL" class="qr-image mb-2" />
         </v-card-text>
         <v-card-text>
-          <!-- Form tạo mới (ví dụ) -->
-          <v-text-field v-model="form.amount" label="Số tiền" type="number" />
-          <v-text-field v-model="form.note" label="Ghi chú: ví dụ thời gian chuyển khoản" />
-
+          <v-text-field v-model="form.amount" label="Số tiền" type="number" variant="outlined" color="primary" />
+          <v-text-field v-model="form.note" label="Ghi chú: ví dụ thời gian chuyển khoản" variant="outlined"
+            color="primary" />
         </v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn text @click="dialogCreate = false">Hủy</v-btn>
-          <v-btn color="primary" @click="handleCreate">Lưu</v-btn>
+          <v-btn variant="text" @click="dialogCreate = false">Hủy</v-btn>
+          <v-btn color="primary" @click="handleCreate" variant="elevated">Lưu</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -193,12 +204,150 @@ onMounted(async () => {
 });
 </script>
 <style lang="scss" scoped>
+.payment-list-container {
+  background: #f8fafc;
+  min-height: 100vh;
+  padding-top: 24px;
+  padding-bottom: 32px;
+}
+
+.filter-card {
+  background: linear-gradient(90deg, #e3f2fd 60%, #fff 100%);
+  border-radius: 18px;
+  box-shadow: 0 2px 12px 0 rgba(25, 118, 210, 0.08);
+  margin-bottom: 32px;
+}
+
+.btn-create {
+  font-weight: 700 !important;
+  font-size: 1.08rem !important;
+  letter-spacing: 0.5px;
+  padding: 0 28px !important;
+  border-radius: 28px !important;
+  min-width: 120px;
+  box-shadow: 0 4px 16px 0 rgba(25, 118, 210, 0.10);
+  background: linear-gradient(90deg, #1976d2 80%, #42a5f5 100%) !important;
+  color: #fff !important;
+  text-transform: none;
+
+  &:hover {
+    background: linear-gradient(90deg, #1565c0 80%, #64b5f6 100%) !important;
+    color: #fff !important;
+    box-shadow: 0 8px 24px 0 rgba(25, 118, 210, 0.18);
+  }
+}
+
+.table-card {
+  border-radius: 18px;
+  box-shadow: 0 2px 16px 0 rgba(60, 72, 88, 0.10);
+  background: #fff;
+  padding: 0;
+}
+
+.modern-table :deep(.v-data-table-header) {
+  background: linear-gradient(90deg, #1976d2 80%, #42a5f5 100%);
+  color: #222 !important; // màu đen hiện đại
+  font-weight: bold !important;
+  font-size: 1.05rem;
+  text-shadow: none;
+}
+
+.modern-table :deep(th) {
+  background: transparent !important;
+  color: #222 !important; // màu đen hiện đại
+  font-weight: bold !important;
+  border-bottom: 2px solid #e3e8ef !important;
+  text-shadow: none;
+}
+
+.modern-table :deep(td) {
+  font-size: 1rem;
+  border-bottom: 1px solid #e3e8ef !important;
+  background: #f9fafb !important;
+}
+
+.modern-table :deep(tr:nth-child(even) td) {
+  background: #f3f6fa !important;
+}
+
+.modern-table :deep(tr:hover) td {
+  background: #e3f2fd !important;
+}
+
+.status-chip {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  border-radius: 8px !important;
+  letter-spacing: 0.2px;
+  min-height: 28px;
+}
+
+.text-blue {
+  color: #1976d2 !important;
+}
+
+.text-red {
+  color: #e53935 !important;
+}
+
+.text-grey {
+  color: #888 !important;
+}
+
+.font-weight-bold {
+  font-weight: 700 !important;
+}
+
+.font-italic {
+  font-style: italic !important;
+}
+
 .qr-image {
-  max-width: 200px;
-  /* hoặc bạn set width cụ thể như 128px */
+  max-width: 180px;
   height: auto;
   object-fit: contain;
-  /* không bị méo ảnh */
   display: block;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px 0 rgba(25, 118, 210, 0.10);
+}
+
+@media (max-width: 900px) {
+
+  .filter-card,
+  .table-card {
+    border-radius: 10px;
+    padding: 8px 2px;
+  }
+
+  .modern-table :deep(td),
+  .modern-table :deep(th) {
+    font-size: 0.95rem;
+    padding: 8px 4px;
+  }
+}
+
+@media (max-width: 600px) {
+  .payment-list-container {
+    padding-top: 8px;
+    padding-bottom: 12px;
+  }
+
+  .filter-card,
+  .table-card {
+    border-radius: 0;
+    box-shadow: none;
+    margin-bottom: 16px;
+    padding: 4px 0;
+  }
+
+  .modern-table :deep(td),
+  .modern-table :deep(th) {
+    font-size: 0.92rem;
+    padding: 6px 2px;
+  }
+
+  .qr-image {
+    max-width: 98vw;
+  }
 }
 </style>
