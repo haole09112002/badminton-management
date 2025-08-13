@@ -32,9 +32,16 @@
       </v-row>
     </v-card>
 
-    <v-data-table-server :headers="headers" :items="tableData" density="compact" :items-length="totalCount"
-      :items-per-page-options="[10, 20, 50]" @update:options="fetchTransactions" v-model:options="options"
-      :loading="loading">
+    <v-data-table-server
+      :headers="headers"
+      :items="tableData"
+      density="compact"
+      :items-length="totalCount"
+      :items-per-page-options="[10, 20, 50]"
+      v-model:options="options"
+      :loading="loading"
+      @update:options="onOptionsUpdate"
+    >
       <template #item.delta="{ item }">
         <span :style="{ color: item.delta > 0 ? 'green' : 'red' }">
           {{ item.delta > 0 ? '+' : '' }}{{ item.delta.toLocaleString() }}
@@ -58,7 +65,7 @@
   </v-container>
 </template>
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import api from '../plugins/axios'; // Axios instance
 import { Transaction } from '../types/responses';
@@ -106,11 +113,10 @@ const headers: DataTableHeader[] = [
   { title: 'Lý do', key: 'reason', align: 'start' },
   { title: 'Thời gian', key: 'createdAt', align: 'start' },
 ];
+
 const fetchTransactions = async () => {
   loading.value = true;
-
-  // Chuẩn bị params
-  const params: any = { // Thay thành memberId thực tế của user, có thể lấy từ context hoặc store
+  const params: any = {
     page: options.value.page,
     limit: options.value.itemsPerPage,
   };
@@ -124,14 +130,19 @@ const fetchTransactions = async () => {
     totalCount.value = data.totalCount;
   } catch (err) {
     console.error(err);
-    // Xử lý lỗi nếu cần
   } finally {
     loading.value = false;
   }
 };
 
+// Hàm xử lý phân trang và thay đổi options
+const onOptionsUpdate = (newOptions: any) => {
+  options.value = { ...options.value, ...newOptions };
+  fetchTransactions();
+};
+
 onMounted(() => {
-  // fetchTransactions();
+  fetchTransactions();
 });
 </script>
 <style lang="scss" scoped>
