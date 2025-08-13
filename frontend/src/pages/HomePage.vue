@@ -1,142 +1,251 @@
 <template>
-  <div class="summary pa-4">
-    <v-card class="mx-auto" max-width="600" v-if="team" color="blue" variant="tonal">
-      <v-card-title>
-        <span class="headline">Chi tiết đội cầu lông</span>
-      </v-card-title>
-      <v-card-text>
-        <v-list dense>
-          <v-list-item>
-            <v-list-item>
-              <v-list-item-title><strong>Tên đội:</strong> {{ team.name }}</v-list-item-title>
-            </v-list-item>
-          </v-list-item>
-          <v-list-item>
-            <v-list-item>
-              <v-list-item-title><strong>Số tiền còn lại:</strong> {{
-                formatCurrency(team.amount) }}</v-list-item-title>
-            </v-list-item>
-          </v-list-item>
-          <v-list-item>
-            <v-list-item>
-              <v-list-item-title><strong>Số cầu còn lại:</strong> {{ team.numberShuttlecock }} ({{
-                formatCurrency(team.shuttlecockFee / team.numberShuttlecock) }} / 1 quả)</v-list-item-title>
-            </v-list-item>
-          </v-list-item>
-
-          <v-list-item v-if="team.note">
-            <v-list-item>
-              <v-list-item-title><strong>Ghi chú:</strong> {{ team.note }}</v-list-item-title>
-            </v-list-item>
-          </v-list-item>
-
-          <v-list-item>
-            <v-list-item>
-              <v-list-item-title><strong>Cập nhật bởi:</strong> {{ team.updateById?.name || 'Không rõ'
-              }}</v-list-item-title>
-            </v-list-item>
-          </v-list-item>
-
-          <v-list-item>
-            <v-list-item>
-              <v-list-item-title>
-                <strong>Cập nhật lúc:</strong> {{ formatDateTime(team.updateTime) }}
-              </v-list-item-title>
-            </v-list-item>
-          </v-list-item>
-        </v-list>
-      </v-card-text>
-    </v-card>
-    <div v-else class="d-flex justify-center">
-      <v-progress-circular indeterminate class="mx-auto" />
+  <div class="home-page">
+    <!-- Header Section -->
+    <div class="header-section mb-6">
+      <v-container>
+        <div class="d-flex flex-column flex-md-row align-start align-md-center justify-space-between gap-4">
+          <div class="text-center text-md-start">
+            <h1 class="text-h3 font-weight-bold text-primary mb-2">
+              Dashboard
+            </h1>
+            <p class="text-body-1 text-medium-emphasis">
+              Quản lý đội cầu lông và theo dõi hoạt động
+            </p>
+          </div>
+          <div class="d-flex flex-column flex-sm-row gap-6 w-100 w-md-auto">
+            <v-btn v-if="appStore.isLeadOrAdminPermission" color="orange" prepend-icon="mdi-shuttlecock"
+              @click="openCreateDialog" variant="elevated" size="large" class="w-100 w-sm-auto">
+              Mua cầu
+            </v-btn>
+            <v-btn v-if="appStore.isLeadOrAdminPermission" color="primary" prepend-icon="mdi-calendar-plus"
+              @click="redirectToCreateSession" variant="elevated" size="large" class="w-100 w-sm-auto">
+              Tạo lịch
+            </v-btn>
+          </div>
+        </div>
+      </v-container>
     </div>
-    <!-- Các nút hành động -->
-    <div class="d-flex flex-column ga-3 mt-4 align-center" width="300">
-      <v-btn :disabled="!appStore.isLeadOrAdminPermission" color="orange" @click="openCreateDialog" size="small"
-        width="300">
-        Thanh toán tiền mua cầu
-      </v-btn>
-      <v-btn :disabled="!appStore.isLeadOrAdminPermission" color="primary" @click="redirectToCreateSession" size="small"
-        width="300">
-        Thanh toán sân cố định
-      </v-btn>
+
+    <!-- Team Info Cards -->
+    <v-container v-if="team" class="mb-6">
+      <v-row>
+        <!-- Team Balance Card -->
+        <v-col cols="12" md="4">
+          <v-card class="team-card balance-card" elevation="4">
+            <v-card-text class="text-center pa-6">
+              <v-icon size="64" color="success" class="mb-4">mdi-wallet</v-icon>
+              <h3 class="text-h5 font-weight-bold mb-2 text-dark">Số dư nhóm</h3>
+              <div class="text-h4 font-weight-bold text-success mb-2">
+                {{ formatCurrency(team.amount) }}
+              </div>
+              <p class="text-body-2 text-medium-emphasis">Tổng số tiền hiện có</p>
+            </v-card-text>
+          </v-card>
+        </v-col>
+
+        <!-- Shuttlecock Card -->
+        <v-col cols="12" md="4">
+          <v-card class="team-card shuttlecock-card" elevation="4">
+            <v-card-text class="text-center pa-6">
+              <v-icon size="64" color="orange" class="mb-4">mdi-shuttlecock</v-icon>
+              <h3 class="text-h5 font-weight-bold mb-2 text-dark">Cầu lông</h3>
+              <div class="text-h4 font-weight-bold text-orange mb-2">
+                {{ team.numberShuttlecock }}
+              </div>
+              <p class="text-body-2 text-medium-emphasis">
+                {{ formatCurrency(team.shuttlecockFee / team.numberShuttlecock) }} / quả
+              </p>
+            </v-card-text>
+          </v-card>
+        </v-col>
+
+        <!-- Team Info Card -->
+        <v-col cols="12" md="4">
+          <v-card class="team-card info-card" elevation="4">
+            <v-card-text class="pa-6">
+              <div class="d-flex align-center mb-4">
+                <v-icon size="32" color="primary" class="me-3">mdi-account-group</v-icon>
+                <h3 class="text-h5 font-weight-bold text-dark">Thông tin đội</h3>
+              </div>
+              <v-list density="compact" class="bg-transparent">
+                <v-list-item class="px-0">
+                  <template v-slot:prepend>
+                    <v-icon size="small" color="primary">mdi-tag</v-icon>
+                  </template>
+                  <v-list-item-title class="text-body-1 text-dark">
+                    <strong>{{ team.name }}</strong>
+                  </v-list-item-title>
+                </v-list-item>
+                <v-list-item class="px-0">
+                  <template v-slot:prepend>
+                    <v-icon size="small" color="primary">mdi-account</v-icon>
+                  </template>
+                  <v-list-item-title class="text-body-2 text-dark">
+                    {{ team.updateById?.name || 'Không rõ' }}
+                  </v-list-item-title>
+                </v-list-item>
+                <v-list-item class="px-0">
+                  <template v-slot:prepend>
+                    <v-icon size="small" color="primary">mdi-clock</v-icon>
+                  </template>
+                  <v-list-item-title class="text-body-2 text-dark">
+                    {{ formatDateTime(team.updateTime) }}
+                  </v-list-item-title>
+                </v-list-item>
+              </v-list>
+              <v-expand-transition>
+                <div v-if="team.note" class="mt-3">
+                  <v-divider class="mb-3"></v-divider>
+                  <div class="d-flex align-start">
+                    <v-icon size="small" color="info" class="me-2 mt-1">mdi-note</v-icon>
+                    <p class="text-body-2 text-dark mb-0">{{ team.note }}</p>
+                  </div>
+                </div>
+              </v-expand-transition>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
+    </v-container>
+
+    <!-- Loading State -->
+    <div v-else class="d-flex justify-center align-center" style="height: 300px;">
+      <v-progress-circular indeterminate size="64" color="primary"></v-progress-circular>
     </div>
-    <v-dialog v-model="dialogCreate" max-width="500px">
-      <v-card>
-        <v-card-title class="text-h6">Thanh toán tiền mua cầu</v-card-title>
-        <v-card-text class="d-flex flex-column">
-          <v-text-field v-model="form.shuttlecockFee" label="Số tiền" type="number" density="compact" />
-          <v-text-field v-model="form.numberShuttlecock" label="Số cầu" type="number" density="compact" />
-          <v-text-field v-model="form.note" label="Ghi chú" density="compact" />
-          <span class="text-caption text-blue">Tiền cầu sẽ trừ vào tiền nhóm</span>
-          <span v-if="!isEnoughtGroupBalance" class="text-caption text-red">Nhóm không đủ số dư</span>
+
+    <!-- Members Section -->
+    <v-container class="mb-6">
+      <v-card class="members-card" elevation="2">
+        <v-card-title class="d-flex align-center pa-6">
+          <v-icon size="32" color="primary" class="me-3">mdi-account-multiple</v-icon>
+          <h2 class="text-h5 font-weight-bold">Thành viên đội</h2>
+          <v-spacer></v-spacer>
+          <v-chip color="success" variant="tonal" size="large">
+            <v-icon start size="small">mdi-wallet</v-icon>
+            Tổng: {{ formatCurrency(totalBalance) }}
+          </v-chip>
+        </v-card-title>
+        <v-card-text class="pa-0">
+          <v-data-table :headers="memberSeaders" :items="members" :loading="loading" density="comfortable"
+            :items-per-page="-1" :mobile-breakpoint="0" hide-default-footer class="members-table">
+            <template #item.no="{ index }">
+              <v-avatar size="32" color="primary" variant="tonal">
+                <span class="text-caption font-weight-bold">{{ index + 1 }}</span>
+              </v-avatar>
+            </template>
+            <template #item.name="{ item }">
+              <div class="d-flex align-center">
+                <v-avatar size="40" color="primary" variant="tonal" class="me-3">
+                  <span class="text-body-2 font-weight-bold">{{ item.name.charAt(0).toUpperCase() }}</span>
+                </v-avatar>
+                <div>
+                  <div class="font-weight-medium">{{ item.name }}</div>
+                  <div class="text-caption text-medium-emphasis">{{ item.email }}</div>
+                </div>
+              </div>
+            </template>
+            <template #item.balance="{ item }">
+              <v-chip :color="item.balance >= 0 ? 'success' : 'error'" variant="tonal" size="large">
+                <v-icon start size="small">
+                  {{ item.balance >= 0 ? 'mdi-arrow-up' : 'mdi-arrow-down' }}
+                </v-icon>
+                {{ formatCurrency(item.balance) }}
+              </v-chip>
+            </template>
+          </v-data-table>
         </v-card-text>
-        <v-card-actions>
+      </v-card>
+    </v-container>
+
+    <!-- Transactions Section -->
+    <v-container>
+      <v-card class="transactions-card" elevation="2">
+        <v-card-title class="d-flex align-center pa-6">
+          <v-icon size="32" color="primary" class="me-3">mdi-history</v-icon>
+          <h2 class="text-h5 font-weight-bold">Lịch sử giao dịch</h2>
+        </v-card-title>
+        <v-card-text class="pa-0">
+          <v-data-table-server :headers="headers" :items="tableData" :items-length="totalCount" :loading="loading"
+            density="comfortable" :mobile-breakpoint="0" v-model:options="options"
+            :items-per-page-options="[5, 10, 20, 50]" show-current-page @update:options="fetchTransactions"
+            class="transactions-table">
+            <template #item.delta="{ item }">
+              <v-chip :color="item.delta >= 0 ? 'success' : 'error'" variant="tonal" size="small">
+                {{ formatCurrency(item.delta) }}
+              </v-chip>
+            </template>
+
+            <template #item.balanceAfter="{ item }">
+              <span class="font-weight-medium">
+                {{ formatCurrency(item.balanceAfter) }}
+              </span>
+            </template>
+
+            <template #item.reason="{ item }">
+              <div class="d-flex align-center">
+                <v-icon size="small" color="primary" class="me-2">mdi-information</v-icon>
+                <RouterLink v-if="item.sessionId" :to="`/badminton-session/${item.sessionId}`"
+                  class="text-primary text-decoration-none font-weight-medium">
+                  {{ item.reason }}
+                </RouterLink>
+                <span v-else class="font-weight-medium">{{ item.reason }}</span>
+              </div>
+            </template>
+
+            <template #item.createdAt="{ item }">
+              <v-chip variant="outlined" size="small" color="grey">
+                <v-icon start size="x-small">mdi-clock</v-icon>
+                {{ item.createdAt }}
+              </v-chip>
+            </template>
+          </v-data-table-server>
+        </v-card-text>
+      </v-card>
+    </v-container>
+
+    <!-- Shuttlecock Payment Dialog -->
+    <v-dialog v-model="dialogCreate" max-width="500px" persistent>
+      <v-card>
+        <v-card-title class="d-flex align-center pa-6">
+          <v-icon size="32" color="orange" class="me-3">mdi-shuttlecock</v-icon>
+          <h3 class="text-h6 font-weight-bold">Thanh toán tiền mua cầu</h3>
+        </v-card-title>
+        <v-card-text class="pa-6">
+          <v-form @submit.prevent="handleCreate">
+            <v-text-field v-model="form.shuttlecockFee" label="Số tiền" type="number" density="comfortable"
+              variant="outlined" prepend-inner-icon="mdi-currency-vnd"
+              :rules="[(v: any) => !!v || 'Vui lòng nhập số tiền']" />
+            <v-text-field v-model="form.numberShuttlecock" label="Số cầu" type="number" density="comfortable"
+              variant="outlined" prepend-inner-icon="mdi-numeric"
+              :rules="[(v: any) => !!v || 'Vui lòng nhập số cầu']" />
+            <v-textarea v-model="form.note" label="Ghi chú" density="comfortable" variant="outlined"
+              prepend-inner-icon="mdi-note" rows="3" />
+            <v-alert type="info" variant="tonal" class="mt-3" density="compact">
+              Tiền cầu sẽ trừ vào tiền nhóm
+            </v-alert>
+            <v-alert v-if="!isEnoughtGroupBalance" type="error" variant="tonal" class="mt-3" density="compact">
+              <v-icon start size="small">mdi-alert</v-icon>
+              Nhóm không đủ số dư
+            </v-alert>
+          </v-form>
+        </v-card-text>
+        <v-card-actions class="pa-6">
           <v-spacer />
-          <v-btn variant="text" @click="dialogCreate = false">Hủy</v-btn>
-          <v-btn color="primary" :disabled="!isEnoughtGroupBalance" @click="handleCreate">Lưu</v-btn>
+          <v-btn variant="outlined" @click="dialogCreate = false" size="large">
+            Hủy
+          </v-btn>
+          <v-btn color="orange" :disabled="!isEnoughtGroupBalance" @click="handleCreate" size="large"
+            :loading="isLoading">
+            <v-icon start>mdi-check</v-icon>
+            Xác nhận
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <v-data-table-server class="mt-4" :headers="headers" :items="tableData" :items-length="totalCount"
-      :loading="loading" density="compact" :mobile-breakpoint="0" v-model:options="options"
-      :items-per-page-options="[5, 10, 20, 50]" show-current-page @update:options="fetchTransactions">
-      <template #top>
-        <div class="d-flex justify-center align-center px-4 py-2">
-          <h3 class="text-h6">Biến động số dư của nhóm</h3>
-        </div>
-      </template>
-      <template #item.delta="{ item }">
-        <span :style="{ color: item.delta > 0 ? 'green' : 'red' }">
-          {{ item.delta > 0 ? '+' : '' }}{{ item.delta.toLocaleString() }}
-        </span>
-      </template>
-
-      <template #item.balanceAfter="{ item }">
-        {{ item.balanceAfter.toLocaleString() }}
-      </template>
-
-      <template #item.reason="{ item }">
-        <RouterLink v-if="item.sessionId" :to="`/badminton-session/${item.sessionId}`"
-          class="text-blue text-decoration-underline">
-          {{ item.reason }}
-        </RouterLink>
-        <span v-else>{{ item.reason }}</span>
-      </template>
-
-      <template #item.createdAt="{ item }">
-        {{ item.createdAt }}
-      </template>
-    </v-data-table-server>
-    <v-data-table class="mt-4" :headers="memberSeaders" :items="members" :loading="loading" density="compact"
-      :items-per-page="-1" :mobile-breakpoint="0" hide-default-footer>
-      <template #top>
-        <div class="d-flex justify-center align-center px-4 py-2">
-          <h3 class="text-h6">Danh sách thành viên</h3>
-        </div>
-      </template>
-      <template #item.no="{ index, item }">
-        <span>
-          {{ index + 1 }}
-        </span>
-      </template>
-      <template #item.balance="{ item }">
-        <span :style="{ color: item.balance > 0 ? 'green' : 'red' }">
-          {{ formatCurrency(item.balance) }}
-        </span>
-      </template>
-      <template #bottom>
-        <div class="d-flex justify-center mt-2">
-          <div class="font-weight-bold">
-            Tổng số dư: {{ formatCurrency(totalBalance) }}
-          </div>
-        </div>
-      </template>
-    </v-data-table>
   </div>
 </template>
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { DataTableHeader, useDisplay } from 'vuetify'
 import { GROUP_ID } from '../constants/config'
@@ -308,21 +417,202 @@ const fetchTransactions = async () => {
 };
 </script>
 <style scoped>
-@media (max-width: 600px) {
-  .summary {
-    display: flex;
-    flex-direction: column;
-    padding: 16px;
-    align-items: center;
-    /* justify-content: center; */
+.home-page {
+  min-height: 100vh;
+  background: #fafafa;
+}
+
+.header-section {
+  background: #ffffff;
+  color: #1e293b;
+  padding: 2rem 0;
+  margin: -1rem -1rem 2rem -1rem;
+  border-bottom: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.team-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+}
+
+.team-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.balance-card {
+  background: #ffffff;
+  color: #1e293b;
+  border: 2px solid #10b981;
+}
+
+.shuttlecock-card {
+  background: #ffffff;
+  color: #1e293b;
+  border: 2px solid #f59e0b;
+}
+
+.info-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+}
+
+.members-card,
+.transactions-card {
+  border-radius: 12px;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+}
+
+.members-table,
+.transactions-table {
+  border-radius: 0 0 12px 12px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 960px) {
+  .header-section {
+    padding: 1.5rem 0;
   }
 
-  .v-btn {
-    width: 100%;
+  .header-section h1 {
+    font-size: 2rem !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .header-section {
+    padding: 1rem 0;
+    margin: -1rem -1rem 1rem -1rem;
+  }
+
+  .header-section h1 {
+    font-size: 1.5rem !important;
+  }
+
+  .header-section p {
+    font-size: 0.875rem !important;
+  }
+
+  .team-card {
+    margin-bottom: 1rem;
   }
 
   .v-card-text {
-    padding: 12px;
+    padding: 1rem !important;
   }
+
+  .v-card-title {
+    padding: 1rem !important;
+  }
+
+  .v-btn {
+    font-size: 0.875rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-section h1 {
+    font-size: 1.25rem !important;
+  }
+
+  .text-h4 {
+    font-size: 1.5rem !important;
+  }
+
+  .text-h5 {
+    font-size: 1.25rem !important;
+  }
+}
+
+/* Custom scrollbar for tables */
+.members-table ::-webkit-scrollbar,
+.transactions-table ::-webkit-scrollbar {
+  height: 6px;
+}
+
+.members-table ::-webkit-scrollbar-track,
+.transactions-table ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.members-table ::-webkit-scrollbar-thumb,
+.transactions-table ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.members-table ::-webkit-scrollbar-thumb:hover,
+.transactions-table ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Custom responsive button classes */
+.w-100 {
+  width: 100% !important;
+}
+
+.w-sm-auto {
+  width: auto !important;
+}
+
+@media (max-width: 600px) {
+  .w-sm-auto {
+    width: 100% !important;
+  }
+}
+
+/* Ensure button spacing */
+.gap-6 {
+  gap: 24px !important;
+}
+
+@media (max-width: 600px) {
+  .gap-6 {
+    gap: 16px !important;
+  }
+}
+
+/* Text contrast improvements */
+.text-dark {
+  color: #1e293b !important;
+}
+
+.text-white {
+  color: #ffffff !important;
+}
+
+.text-opacity-90 {
+  opacity: 0.9 !important;
+}
+
+/* Card text improvements */
+.balance-card .v-card-text,
+.shuttlecock-card .v-card-text {
+  color: #1e293b !important;
+}
+
+.info-card .v-card-text {
+  color: #1e293b !important;
+}
+
+/* Remove text shadows since we're using white backgrounds */
+.team-card h3,
+.team-card .text-h4,
+.team-card .text-h5 {
+  text-shadow: none;
+}
+
+.balance-card h3,
+.balance-card .text-h4,
+.shuttlecock-card h3,
+.shuttlecock-card .text-h4 {
+  text-shadow: none;
 }
 </style>
