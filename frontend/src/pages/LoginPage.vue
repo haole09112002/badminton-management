@@ -61,6 +61,7 @@ const handleLogin = async () => {
     const data = res.data;
     localStorage.setItem('accessToken', data.accessToken);
     localStorage.setItem('refreshToken', data.refreshToken);
+    localStorage.setItem('role', data.role);
     router.push('/home');
   } catch (err: any) {
     alert(err.response?.data?.message || err.message || 'Đăng nhập thất bại');

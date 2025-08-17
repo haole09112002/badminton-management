@@ -108,3 +108,7 @@ export interface BadmintonSessionWaringResponse {
   session: BadmintonSession,
   errors: Partial<Record<'shuttlecockFee' | 'numberShuttlecock', string>>;
 }
+
+export interface ChangePasswordResponse {
+  status: boolean;
+}

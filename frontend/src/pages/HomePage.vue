@@ -116,14 +116,16 @@
     <!-- Members Section -->
     <v-container class="mb-6">
       <v-card class="members-card" elevation="2">
-        <v-card-title class="d-flex align-center pa-6">
+        <v-card-title class="d-flex align-center pa-6 flex-wrap">
           <v-icon size="32" color="primary" class="me-3">mdi-account-multiple</v-icon>
           <h2 class="text-h5 font-weight-bold">Thành viên đội</h2>
           <v-spacer></v-spacer>
-          <v-chip color="success" variant="tonal" size="large">
-            <v-icon start size="small">mdi-wallet</v-icon>
-            Tổng: {{ formatCurrency(totalBalance) }}
-          </v-chip>
+          <div class="total-balance-wrap">
+            <v-chip color="success" variant="tonal" size="large">
+              <v-icon start size="small">mdi-wallet</v-icon>
+              Tổng: {{ formatCurrency(totalBalance) }}
+            </v-chip>
+          </div>
         </v-card-title>
         <v-card-text class="pa-0">
           <v-data-table :headers="memberSeaders" :items="members" :loading="loading" density="comfortable"
@@ -145,9 +147,9 @@
               </div>
             </template>
             <template #item.balance="{ item }">
-              <v-chip :color="item.balance >= 0 ? 'success' : 'error'" variant="tonal" size="large">
+              <v-chip :color="item.balance > 0 ? 'success' : 'error'" variant="tonal" size="large">
                 <v-icon start size="small">
-                  {{ item.balance >= 0 ? 'mdi-arrow-up' : 'mdi-arrow-down' }}
+                  {{ item.balance > 0 ? 'mdi-arrow-up' : 'mdi-arrow-down' }}
                 </v-icon>
                 {{ formatCurrency(item.balance) }}
               </v-chip>
@@ -171,7 +173,7 @@
             class="transactions-table">
             <template #item.delta="{ item }">
               <v-chip :color="item.delta >= 0 ? 'success' : 'error'" variant="tonal" size="small">
-                {{ formatCurrency(item.delta) }}
+                {{ item.delta >= 0 ? "+" + formatCurrency(item.delta) : formatCurrency(item.delta) }}
               </v-chip>
             </template>
 
@@ -474,6 +476,16 @@ const fetchTransactions = async () => {
   border-radius: 0 0 12px 12px;
 }
 
+.total-balance-wrap {
+  max-width: 100%;
+  white-space: normal;
+  word-break: break-word;
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
 /* Responsive adjustments */
 @media (max-width: 960px) {
   .header-section {
@@ -513,6 +525,17 @@ const fetchTransactions = async () => {
 
   .v-btn {
     font-size: 0.875rem !important;
+  }
+
+  .total-balance-wrap {
+    margin-top: 12px;
+    width: 100%;
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .v-card-title.flex-wrap {
+    flex-wrap: wrap !important;
   }
 }
 

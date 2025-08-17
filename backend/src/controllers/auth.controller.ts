@@ -1,9 +1,10 @@
 import { Request, Response } from 'express';
-import { SuccessResponse, InternalErrorResponse } from '../common/responseType';
+import { SuccessResponse, InternalErrorResponse, BadRequestResponse } from '../common/responseType';
 import { JWT_REFRESH_SECRET } from '../config/jwt';
 import { Member } from '../models/Member';
 import { generateAccessToken, generateRefreshToken } from '../utils/jwt';
 import jwt from 'jsonwebtoken';
+import { AuthenticatedRequest } from '../types/express';
 
 export const register = async (req: Request, res: Response) => {
     try {
@@ -49,7 +50,7 @@ export const login = async (req: Request, res: Response) => {
         maxAge: 7 * 24 * 60 * 60 * 1000 // 7 ngày
     });
 
-    return res.json({ accessToken, refreshToken });
+    return res.json({ accessToken, refreshToken, role: user.role });
 };
 
 
@@ -69,3 +70,32 @@ export const logout = async (req: Request, res: Response): Promise<Response> => 
     res.clearCookie('refreshToken');
     return res.json({ message: 'Đăng xuất thành công' });
 };
+
+
+export const changePassword = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
+    const { oldPassword, newPassword } = req.body;
+    if (!oldPassword || !newPassword) {
+        return new BadRequestResponse('Cần cung cấp mật khẩu cũ và mới').send(res);
+    }
+    if (oldPassword === newPassword) {
+        return new BadRequestResponse('Mật khẩu mới không được trùng với mật khẩu cũ').send(res);
+    }
+    const userId = req.user?.id;
+    console.log(req.user)
+    if (!userId) {
+        return new BadRequestResponse('Bạn cần đăng nhập để thay đổi mật khẩu').send(res);
+    }
+    const user = await Member.findById(userId);
+    if (!user) {
+        return new BadRequestResponse('Người dùng không tồn tại').send(res);
+    }
+    const isValid = await user.comparePassword(oldPassword);
+    if (!isValid) {
+        return new BadRequestResponse('Mật khẩu cũ không đúng').send(res);
+    }
+    user.password = newPassword; // Nên hash mật khẩu trước khi lưu
+    await user.save();
+
+    return new SuccessResponse("Thành công", { status: true }).send(res);
+};
+

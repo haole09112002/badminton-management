@@ -63,6 +63,9 @@ const menuItems = computed(() => [
   ...(appStore.isAdminPermission
     ? [{ to: '/user-management', icon: 'mdi-account-group', title: 'Quản lý người dùng' }]
     : []),
+  { to: "change-password", icon: 'mdi-lock-reset', title: 'Đổi mật khẩu' },
+  { to: '/policy', icon: 'mdi-file-document', title: 'Chính sách' },
+  { to: '/logout', icon: 'mdi-logout', title: 'Đăng xuất' }
 ])
 
 function navItemClass(path: string) {

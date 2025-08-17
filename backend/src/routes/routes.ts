@@ -1,6 +1,6 @@
 import express from 'express';
 import { getMembers, addMember, getUserProfile, deleteMember, updateMember, restoreMember } from '../controllers/memberController';
-import { login, register, refreshTokenHandler, logout } from '../controllers/auth.controller';
+import { login, register, refreshTokenHandler, logout, changePassword } from '../controllers/auth.controller';
 import { acceptPayment, cancelPayment, createPayment, getMyPayments } from '../controllers/paymentController';
 import { getBadmintonSessions, getAllMembersWithBalance, createBadmintonSession, updateBadmintonSession, payBadmintonSession, getTransactionHistoryByGroup, getTransactionHistoryByMember, getAllBadmintonSessions, confirmBadmintonSession } from '../controllers/badmintonSessionController';
 import asyncHandler from '../common/asyncHandler';
@@ -47,6 +47,7 @@ router.post('/auth/login', asyncHandler(login))
 router.post('/auth/register', asyncHandler(register))
 router.post('/auth/refreshToken', asyncHandler(refreshTokenHandler))
 router.post('/auth/logout', asyncHandler(logout))
+router.patch('/auth/change-password', secureRoute('lead', 'admin', 'user'), asyncHandler(changePassword))
 
 // badmintion team
 router.post('/badminton-teams', secureRoute('admin'), asyncHandler(createBadmintonTeam));

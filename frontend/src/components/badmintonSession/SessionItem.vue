@@ -21,6 +21,10 @@
         <v-chip v-else-if="item.status === 'done'" color="grey" class="chip-done" size="small" variant="elevated">
           Đã kết thúc
         </v-chip>
+        <v-chip class="status-chip" size="small" :color="getStatusCf(item.status).color" text-color="white"
+          variant="elevated" prepend-icon="mdi-checkbox-marked-circle">
+          {{ getStatusCf(item.status).text }}
+        </v-chip>
       </div>
     </div>
     <div class="session-info">
@@ -47,12 +51,6 @@
       <div class="info-row">
         <v-icon color="indigo" size="18" class="mr-1">mdi-account-group</v-icon>
         <span>{{ item.numberParticipant }} người</span>
-      </div>
-      <div class="info-row">
-        <v-chip class="status-chip" size="small" :color="getStatusCf(item.status).color" text-color="white"
-          variant="elevated" prepend-icon="mdi-checkbox-marked-circle">
-          {{ getStatusCf(item.status).text }}
-        </v-chip>
       </div>
     </div>
     <div class="session-footer">
@@ -102,17 +100,16 @@ const handleClickSessionDetail = () => {
   background: #fff;
   border-radius: 20px;
   box-shadow: 0 4px 24px 0 rgba(60, 72, 88, 0.10);
-  padding: 20px 20px 16px 20px;
-  margin: 0 auto;
-  min-width: 320px;
-  max-width: 420px;
-  min-height: 320px;
-  height: 340px;
+  padding: 12px 6px 12px 8px;
+  min-width: 90vw;
+  max-width: 98vw;
+  min-height: 240px;
+  height: auto; // 👈 cho auto để không cắt status
   border: 1.5px solid #e3e8ef;
   transition: box-shadow 0.2s, transform 0.2s;
   position: relative;
   box-sizing: border-box;
-  overflow: hidden; // Thêm dòng này
+  // overflow: hidden; // Thêm dòng này
 
   &:hover {
     box-shadow: 0 8px 32px 0 rgba(25, 118, 210, 0.13);
@@ -165,7 +162,7 @@ const handleClickSessionDetail = () => {
   gap: 6px;
   margin-bottom: 10px;
   min-height: 0;
-  overflow: hidden;
+  // overflow: hidden;
 }
 
 .info-row {

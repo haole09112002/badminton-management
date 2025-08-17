@@ -12,7 +12,7 @@ import type {
   PaymentRequest,
   ShuttlecockFeeRequest
 } from '../types/requests'
-import { BadmintonSession, BadmintonSessionWaringResponse, BadmintonTeamResponse, MemberBalance, PaginationResult, PaymentResponse } from '../types/responses'
+import { BadmintonSession, BadmintonSessionWaringResponse, BadmintonTeamResponse, ChangePasswordResponse, MemberBalance, PaginationResult, PaymentResponse } from '../types/responses'
 import { formatCurrency, formatDateTimeVN, formatDateVi } from '../utils/index'
 
 // Interface cho create user request
@@ -131,10 +131,14 @@ export const useAppStore = defineStore('app', () => {
     return response.data.data
   }
 
-  async function logout(): Promise<void> {
-    await api.post<ApiResponse<any>>(`/auth/logout`)
+  async function logout(): Promise<string> {
+    let data = await api.post<ApiResponse<any>>(`/auth/logout`)
+    console.log('Logout response:', data)
     localStorage.removeItem('accessToken')
+    localStorage.removeItem('refreshToken')
+    localStorage.removeItem('role')
     user.value = null
+    return 'Logged out'
   }
 
   async function getBadmintonTeamById(teamId: string): Promise<BadmintonTeamResponse> {
@@ -150,6 +154,14 @@ export const useAppStore = defineStore('app', () => {
   async function getUserProfile(): Promise<Member> {
     const response = await api.get<ApiResponse<Member>>("/members/me")
     user.value = response.data.data
+    return response.data.data
+  }
+
+  async function changePassword(oldPassword: string, newPassword: string): Promise<ChangePasswordResponse> {
+    const response = await api.patch<ApiResponse<ChangePasswordResponse>>("/auth/change-password", {
+      oldPassword,
+      newPassword
+    })
     return response.data.data
   }
 
@@ -182,7 +194,8 @@ export const useAppStore = defineStore('app', () => {
     logout,
     getBadmintonTeamById,
     payForShuttlecockFee,
-    getUserProfile
+    getUserProfile,
+    changePassword
   }
 }, {
   persist: true

@@ -14,8 +14,9 @@ const appStore = useAppStore()
 
 const router = useRouter();
 
-onMounted(() => {
-  appStore.logout();
-  router.replace('/login');
+onMounted(async () => {
+  let data = await appStore.logout();
+  console.log('Logout response:', data);
+  await router.replace('/login');
 });
 </script>
