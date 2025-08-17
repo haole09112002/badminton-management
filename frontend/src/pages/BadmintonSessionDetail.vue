@@ -1,6 +1,6 @@
 <!-- src/pages/Home.vue -->
 <template>
-  <div class="relative">
+  <div class="relative scroll-container">
     <div class="home">
       <span class="text-h6 text-blue">{{ getStatusCf(status ?? "").title }}</span>
       <div class="content">
@@ -1089,6 +1089,13 @@ const getMainRowIndex = (memberId: string): number => {
 </script>
 
 <style lang="scss" scoped>
+.scroll-container {
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
+}
+
 .home {
   text-align: center;
   padding: 20px;

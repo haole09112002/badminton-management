@@ -206,9 +206,12 @@ onMounted(async () => {
 <style lang="scss" scoped>
 .payment-list-container {
   background: #f8fafc;
-  min-height: 100vh;
   padding-top: 24px;
   padding-bottom: 32px;
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
 }
 
 .filter-card {

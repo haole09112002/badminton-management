@@ -1,5 +1,5 @@
 <template>
-    <v-container>
+    <div class="user-management-container">
         <!-- Loading khi đang kiểm tra quyền -->
         <v-row v-if="checkingPermission" class="d-flex justify-center align-center" style="height: 400px;">
             <v-col cols="12" class="text-center">
@@ -129,7 +129,7 @@
                 </template>
             </v-snackbar>
         </div>
-    </v-container>
+    </div>
 </template>
 
 <script setup lang="ts">
@@ -398,5 +398,16 @@ onMounted(async () => {
 <style scoped>
 .v-data-table {
     border-radius: 8px;
+}
+
+.user-management-container {
+    padding: 16px;
+    background: linear-gradient(120deg, #e3f2fd 60%, #fff 100%);
+    box-sizing: border-box;
+    height: 100%;
+    width: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
 }
 </style>

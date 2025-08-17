@@ -1,7 +1,7 @@
 <template>
   <v-app>
     <!-- Header cố định -->
-    <v-app-bar app color="primary" dark elevate-on-scroll flat>
+    <v-app-bar app class="header-color" dark elevate-on-scroll flat>
       <v-app-bar-nav-icon class="d-sm-none" @click="drawer = true" />
       <v-toolbar-title class="font-weight-bold">Badminton Management</v-toolbar-title>
       <v-spacer />
@@ -34,9 +34,7 @@
 
     <!-- Nội dung chính -->
     <v-main class="main-content">
-      <v-container fluid class="pa-6">
-        <router-view :key="route.fullPath" />
-      </v-container>
+      <router-view :key="route.fullPath" />
     </v-main>
   </v-app>
 </template>
@@ -65,6 +63,7 @@ const menuItems = computed(() => [
     : []),
   { to: "change-password", icon: 'mdi-lock-reset', title: 'Đổi mật khẩu' },
   { to: '/policy', icon: 'mdi-file-document', title: 'Chính sách' },
+  // { to: '/gallery', icon: 'mdi-image-multiple', title: 'Ảnh CLB' }, // Thêm dòng này
   { to: '/logout', icon: 'mdi-logout', title: 'Đăng xuất' }
 ])
 
@@ -103,9 +102,12 @@ function navItemClass(path: string) {
 .main-content {
   background: linear-gradient(120deg, #ffffff 0%, #fdfdfd 100%);
   height: calc(100vh - 64px);
-  /* 64px là chiều cao mặc định của v-app-bar */
-  overflow-y: auto;
+  overflow: hidden;
   min-height: 0;
   /* Nếu header cao hơn, chỉnh lại số px cho đúng */
+}
+
+.header-color {
+  background: linear-gradient(90deg, #1976d2 10%, #42a5f5 100%) !important;
 }
 </style>

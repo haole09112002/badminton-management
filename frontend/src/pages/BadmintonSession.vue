@@ -110,10 +110,11 @@ const isUpcomingSession = (session: BadmintonSession): boolean => {
 <style lang="scss" scoped>
 .home {
   padding: 24px 8px 32px 8px;
-  max-width: 1200px;
-  margin: 0 auto;
-  background: #f8fafc;
-  min-height: 100vh;
+  background: #ffff;
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
 }
 
 .v-btn {

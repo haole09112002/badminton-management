@@ -47,7 +47,7 @@
         <v-col cols="12" md="4">
           <v-card class="team-card shuttlecock-card" elevation="4">
             <v-card-text class="text-center pa-6">
-              <v-icon size="64" color="orange" class="mb-4">mdi-shuttlecock</v-icon>
+              <v-icon size="64" color="orange" class="mb-4">mdi-badminton</v-icon>
               <h3 class="text-h5 font-weight-bold mb-2 text-dark">Cầu lông</h3>
               <div class="text-h4 font-weight-bold text-orange mb-2">
                 {{ team.numberShuttlecock }}
@@ -420,8 +420,12 @@ const fetchTransactions = async () => {
 </script>
 <style scoped>
 .home-page {
-  min-height: 100vh;
   background: #fafafa;
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px;
+  box-sizing: border-box;
 }
 
 .header-section {

@@ -150,9 +150,15 @@ onMounted(() => {
 <style lang="scss" scoped>
 .transaction-history-container {
   background: #f8fafc;
-  min-height: 100vh;
   padding-top: 24px;
   padding-bottom: 32px;
+  height: 100%;
+  width: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px;
+  box-sizing: border-box;
+  // background: linear-gradient(120deg, #e3f2fd 60%, #fff 100%);
 }
 
 .filter-card {

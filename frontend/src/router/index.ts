@@ -12,6 +12,7 @@ import LogoutPage from '../pages/LogoutPage.vue'
 import UserManagement from '../pages/UserManagement.vue'
 import ChangePasswordPage from '../pages/ChangePasswordPage.vue'
 import PolicyPage from '../pages/PolicyPage.vue'
+import GalleryCarousel from '../pages/GalleryCarousel.vue' // hoặc '../pages/GalleryCarousel.vue'
 
 const routes = [
   {
@@ -28,6 +29,12 @@ const routes = [
       { path: 'change-password', name: 'ChangePassword', component: ChangePasswordPage },
       { path: 'policy', name: 'Policy', component: PolicyPage },
       { path: 'logout', name: 'Logout', component: LogoutPage },
+      {
+        path: '/gallery',
+        name: 'Gallery',
+        component: GalleryCarousel,
+        meta: { requiresAuth: true }
+      },
     ],
   },
   { path: '/login', name: 'Login', component: LoginPage },

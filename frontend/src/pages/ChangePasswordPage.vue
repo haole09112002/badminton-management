@@ -1,5 +1,5 @@
 <template>
-    <v-container class="change-password-container d-flex justify-center align-center">
+    <div class="change-password-container d-flex justify-center align-center scroll-container">
         <v-card class="change-password-card" elevation="8">
             <v-card-title class="text-center text-blue font-weight-bold text-h5 mb-2">
                 <v-icon color="primary" size="28" class="mr-2">mdi-lock-reset</v-icon>
@@ -25,7 +25,7 @@
                 </v-alert>
             </v-card-text>
         </v-card>
-    </v-container>
+    </div>
 </template>
 
 <script setup lang="ts">
@@ -95,8 +95,14 @@ const handleChangePassword = async () => {
 
 
 <style lang="scss" scoped>
+.scroll-container {
+    height: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
+}
+
 .change-password-container {
-    min-height: 100vh;
     background: linear-gradient(120deg, #e3f2fd 60%, #fff 100%);
     padding: 0;
 }
