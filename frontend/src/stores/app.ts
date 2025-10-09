@@ -121,6 +121,11 @@ export const useAppStore = defineStore('app', () => {
     return response.data.data
   }
 
+  async function createPaymentForMember(param: PaymentRequest, memberId: string): Promise<PaymentResponse> {
+    const response = await api.post<ApiResponse<PaymentResponse>>(`/payments/user/${memberId}`, param)
+    return response.data.data
+  }
+
   async function acceptPayment(paymentId: string): Promise<PaymentResponse> {
     const response = await api.put<ApiResponse<PaymentResponse>>(`/payments/${paymentId}/accept`)
     return response.data.data
@@ -195,7 +200,8 @@ export const useAppStore = defineStore('app', () => {
     getBadmintonTeamById,
     payForShuttlecockFee,
     getUserProfile,
-    changePassword
+    changePassword,
+    createPaymentForMember
   }
 }, {
   persist: true

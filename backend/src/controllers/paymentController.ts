@@ -4,8 +4,9 @@ import { BadRequestError } from '../common/apiError';
 import { InternalErrorResponse, SuccessMsgResponse, SuccessResponse, NotFoundResponse, BadRequestResponse } from '../common/responseType';
 import { Payment } from '../models/payment';
 import { PaginationResult } from '../models/responses';
-import PaymentService from '../services/paymentService';
+import PaymentService, { getMemberById } from '../services/paymentService';
 import { AuthenticatedRequest } from '../types/express';
+import { Member } from '../models/Member';
 
 export const acceptPayment = async (req: Request, res: Response) => {
   try {
@@ -88,5 +89,38 @@ export const getMyPayments = async (req: AuthenticatedRequest, res: Response) =>
     return new SuccessResponse("ok", paginatedResult).send(res)
   } catch (err) {
     return new InternalErrorResponse('Lỗi server').send(res);
+  }
+};
+
+export const createPaymentForUser = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const { groupId, amount, note } = req.body;
+    const { id } = req.params;
+
+    console.log('Create payment for user:', { groupId, amount, note, id });
+    if (!req.user?.id || !amount || !groupId || !id) {
+      return new BadRequestResponse("Thiếu memberId hoặc amount hoac groupId").send(res);
+    }
+
+    const member = await Member.findOne({ _id: id, deletedAt: null });
+    if (!member) {
+      throw new BadRequestError('Member not found');
+    }
+
+    let editedNote = `[${req.user.name} -> ${member.name}] ${note === '' ? "Nạp tiền" : note}`
+    const payment = new Payment({
+      memberId: member._id,
+      groupId: groupId,
+      amount,
+      note: editedNote,
+      status: 'pending',
+      updateById: req.user.id
+    });
+
+    await payment.save();
+    await payment.populate('memberId');
+    return new SuccessResponse('Create Payment successfully', payment).send(res);
+  } catch (err) {
+    next(err);
   }
 };

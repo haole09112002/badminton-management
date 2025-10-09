@@ -14,6 +14,12 @@
           </v-btn>
           <span class="text-red font-italic text-caption">&lt;--- Hãy bấm vào đây để nạp tiền nhé!</span>
         </v-col>
+        <v-col cols="12" md="8" class="d-flex align-center gap-4" v-if="appStore.isLeadOrAdminPermission">
+          <v-btn class="btn-create" color="primary" size="large" elevation="2" variant="elevated" rounded="xl"
+            @click="openNewCreateDialog" prepend-icon="mdi-plus">
+            Nạp tiền cho thành viên khác
+          </v-btn>
+        </v-col>
       </v-row>
     </v-card>
 
@@ -67,6 +73,24 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+    <v-dialog v-model="newDialogCreate" max-width="420px" v-if="appStore.isLeadOrAdminPermission">
+      <v-card>
+        <v-card-title class="text-blue font-weight-bold">Nạp tiền cho thành viên khác</v-card-title>
+        <v-card-text>
+          <v-select v-model="newForm.memberId" :items="members" item-title="title" item-value="value" label="Thành viên"
+            variant="outlined" color="primary" clearable dense prepend-inner-icon="mdi-account-multiple"
+            placeholder="Chọn thành viên" />
+          <v-text-field v-model="newForm.amount" label="Số tiền" type="number" variant="outlined" color="primary" />
+          <v-text-field v-model="newForm.note" label="Ghi chú: ví dụ thời gian chuyển khoản" variant="outlined"
+            color="primary" />
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="newDialogCreate = false">Hủy</v-btn>
+          <v-btn color="primary" @click="handleNewCreate" variant="elevated">Lưu</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -81,12 +105,20 @@ import { DataTableHeader } from 'vuetify';
 const appStore = useAppStore()
 
 const payments = ref<PaymentResponse[]>([]);
-const dialogCreate = ref(false)
+const dialogCreate = ref(false);
+const newDialogCreate = ref(false)
 const tableLoading = ref(false);
 const form = ref<PaymentRequest>({
   groupId: GROUP_ID,
   amount: 0,
   note: ''
+})
+
+const newForm = ref({
+  groupId: GROUP_ID,
+  amount: 0,
+  note: '',
+  memberId: ''
 })
 
 const options = ref({
@@ -115,6 +147,20 @@ const headers: DataTableHeader[] = [
   { title: 'Hành động', key: 'actions', sortable: false }
 ];
 
+const members = ref<{ title: string; value: string }[]>([]);
+
+const fetchMembers = async () => {
+  try {
+    const res = await appStore.fetchAllMembers();
+    members.value = res.map(m => ({
+      title: `${m.name} - ${m.email}`,
+      value: m.id
+    }));
+  } catch (err) {
+    console.error('Lỗi lấy danh sách thành viên', err);
+  }
+};
+
 const totalItems = ref(0);
 const fetchPayments = async () => {
   try {
@@ -141,13 +187,25 @@ const openCreateDialog = () => {
   }
   dialogCreate.value = true
 }
+
+// Gọi khi mở dialog nạp tiền cho thành viên khác
+const openNewCreateDialog = async () => {
+  newForm.value = {
+    ...newForm.value,
+    amount: 0,
+    note: '',
+    memberId: ''
+  }
+  await fetchMembers();
+  newDialogCreate.value = true
+}
+
 const handleCreate = async () => {
   if (!form.value.amount) {
     alert('Vui lòng nhập số tiền')
     return
   }
   try {
-    console.log("tesststst")
     await appStore.createPayment(form.value)
     dialogCreate.value = false
     await fetchPayments()
@@ -155,6 +213,26 @@ const handleCreate = async () => {
     alert(error.response?.data?.message || error.message || 'Tạo payment thất bại')
   }
 }
+
+const handleNewCreate = async () => {
+  if (!newForm.value.amount) {
+    alert('Vui lòng nhập số tiền');
+    return
+  }
+  if (!newForm.value.memberId) {
+    alert('Vui lòng chọn thành viên');
+    return
+  }
+  try {
+    console.log('Nạp tiền cho thành viên:', newForm.value.memberId);
+    await appStore.createPaymentForMember(newForm.value, newForm.value.memberId);
+    newDialogCreate.value = false
+    await fetchPayments()
+  } catch (error: any) {
+    alert(error.response?.data?.message || error.message || 'Tạo payment thất bại')
+  }
+}
+
 const accept = async (item: PaymentResponse) => {
   console.log("Chấp nhận:", item);
   try {

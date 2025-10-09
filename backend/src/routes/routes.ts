@@ -1,7 +1,7 @@
 import express from 'express';
 import { getMembers, addMember, getUserProfile, deleteMember, updateMember, restoreMember } from '../controllers/memberController';
 import { login, register, refreshTokenHandler, logout, changePassword } from '../controllers/auth.controller';
-import { acceptPayment, cancelPayment, createPayment, getMyPayments } from '../controllers/paymentController';
+import { acceptPayment, cancelPayment, createPayment, createPaymentForUser, getMyPayments } from '../controllers/paymentController';
 import { getBadmintonSessions, getAllMembersWithBalance, createBadmintonSession, updateBadmintonSession, payBadmintonSession, getTransactionHistoryByGroup, getTransactionHistoryByMember, getAllBadmintonSessions, confirmBadmintonSession } from '../controllers/badmintonSessionController';
 import asyncHandler from '../common/asyncHandler';
 import { authenticateJWT } from '../middlewares/auth.middleware';
@@ -28,6 +28,7 @@ router.patch('/members/:id/restore', secureRoute('admin'), asyncHandler(restoreM
 router.get('/members/me', secureRoute('lead', 'admin', 'user'), asyncHandler(getUserProfile));
 router.post('/payments', secureRoute('lead', 'admin', 'user'), asyncHandler(createPayment));
 router.get('/payments/me', secureRoute('lead', 'admin', 'user'), asyncHandler(getMyPayments));
+router.post('/payments/user/:id', secureRoute('lead', 'admin'), asyncHandler(createPaymentForUser));
 
 router.put('/payments/:id/accept', secureRoute('lead', 'admin'), asyncHandler(acceptPayment));
 router.put('/payments/:id/reject', secureRoute('lead', 'admin'), asyncHandler(cancelPayment));
