@@ -61,6 +61,11 @@
                             <v-icon size="small" class="me-1">mdi-delete</v-icon>
                             Xóa
                         </v-btn>
+                        <v-btn color="primary" size="small" variant="outlined" class="me-2"
+                            @click="openTransactionDialog(item)">
+                            <v-icon size="small" class="me-1">mdi-pencil</v-icon>
+                            xem giao dịch
+                        </v-btn>
                     </template>
                 </v-data-table>
             </v-card>
@@ -97,7 +102,7 @@
             </v-dialog>
 
             <!-- Dialog xác nhận xóa -->
-            <v-dialog v-model="deleteDialog" max-width="400px">
+            <v-dialog v-model="deleteDialog">
                 <v-card>
                     <v-card-title class="text-h6">
                         Xác nhận xóa
@@ -114,6 +119,26 @@
                         </v-btn>
                         <v-btn color="error" @click="deleteUser" :loading="deleting">
                             Xóa
+                        </v-btn>
+                    </v-card-actions>
+                </v-card>
+            </v-dialog>
+
+            <v-dialog v-model="transactionDialog">
+                <v-card>
+                    <v-card-title class="text-h6">
+                        Lịch sử giao dịch của {{ userTransaction?.name }}
+                    </v-card-title>
+                    <v-card-text>
+
+                        <TransactionHistory :memberId="userTransaction?.id"></TransactionHistory>
+
+
+                    </v-card-text>
+                    <v-card-actions>
+                        <v-spacer />
+                        <v-btn color="grey" variant="text" @click="closeTransactionDialog">
+                            Đóng
                         </v-btn>
                     </v-card-actions>
                 </v-card>
@@ -138,7 +163,7 @@ import { useAppStore } from '../stores/app'
 import { useRouter } from 'vue-router'
 import type { Member } from '../types'
 import { formatCurrency } from '../utils'
-
+import TransactionHistory from './TransactionHistory.vue'
 const appStore = useAppStore()
 const router = useRouter()
 
@@ -149,11 +174,13 @@ const deleting = ref(false)
 const checkingPermission = ref(true)
 const dialog = ref(false)
 const deleteDialog = ref(false)
+const transactionDialog = ref(false)
 const formValid = ref(false)
 const formRef = ref()
 const isEditing = ref(false)
 const userToDelete = ref<Member | null>(null)
 const userToEdit = ref<Member | null>(null)
+const userTransaction = ref<Member | null>(null)
 const users = ref<Member[]>([])
 
 // Form
@@ -275,6 +302,18 @@ const openEditDialog = (user: Member) => {
     form.role = user.role
     form.balance = user.balance
     dialog.value = true
+}
+
+const openTransactionDialog = (user: Member) => {
+    userTransaction.value = user
+    //
+    transactionDialog.value = true
+
+}
+
+const closeTransactionDialog = () => {
+    transactionDialog.value = false
+    userTransaction.value = null
 }
 
 const closeDialog = () => {

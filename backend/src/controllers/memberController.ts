@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { SuccessResponse, InternalErrorResponse, BadRequestResponse } from '../common/responseType';
 import { Member } from '../models/Member';
 import { AuthenticatedRequest } from '../types/express';
+import { TransactionHistory } from '../models/TransactionHistory';
 
 // Lấy danh sách thành viên
 export const getMembers = async (req: Request, res: Response) => {
@@ -185,5 +186,53 @@ export const restoreMember = async (req: Request, res: Response) => {
   } catch (error) {
     console.log(error);
     return new InternalErrorResponse().send(res);
+  }
+};
+
+export const getTransactionHistoryByMemberId = async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    if (!user || !user.id) {
+      return new InternalErrorResponse().send(res);
+    }
+    if (user.role !== 'admin' && user.role !== 'lead') {
+      return new InternalErrorResponse('Không có quyền truy cập').send(res);
+    }
+    const { id } = req.params;
+
+    let memberId = id;
+    const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
+    const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+
+    // Build filter
+    const filter: any = { memberId };
+    filter.type = 'person'
+    if (startDate || endDate) {
+      filter.createdAt = {};
+      if (startDate) filter.createdAt.$gte = startDate;
+      if (endDate) filter.createdAt.$lte = endDate;
+    }
+
+    // Query tổng số bản ghi để phân trang
+    const totalCount = await TransactionHistory.countDocuments(filter);
+
+    // Lấy dữ liệu với phân trang
+    const transactions = await TransactionHistory.find(filter)
+      .sort({ createdAt: -1 }) // sắp xếp mới nhất lên đầu
+      .skip((page - 1) * limit)
+      .limit(limit);
+
+    return res.json({
+      page,
+      limit,
+      totalPages: Math.ceil(totalCount / limit),
+      totalCount,
+      transactions,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Lỗi server' });
   }
 };
