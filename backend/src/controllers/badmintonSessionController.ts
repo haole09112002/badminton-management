@@ -556,11 +556,11 @@ export const payBadmintonSession = async (req: Request, res: Response) => {
     if (session.courtType !== 'fixed') {
       let totalFee = session.courtFee + session.extraFee + sumModifiedFee
       group.amount = group.amount - totalFee
-      await paymentService.recordTransactionHistoryForGroup(undefined, group, totalFee * -1, session, mongoSession, `[VÃNG LAI]Thanh toán buổi đánh cầu lông sân ${session.location} ngày  ${formatDateVi(new Date)} (-${session.numberShuttlecock} cầu/ còn ${group.numberShuttlecock})`)
+      await paymentService.recordTransactionHistoryForGroup(undefined, group, totalFee * -1, session, mongoSession, `[VÃNG LAI]Thanh toán buổi đánh cầu lông sân ${session.location} ngày  ${formatDateVi(session.time)} (-${session.numberShuttlecock} cầu/ còn ${group.numberShuttlecock})`)
     } else {
       let totalFee = session.extraFee + sumModifiedFee
       group.amount = group.amount - totalFee
-      await paymentService.recordTransactionHistoryForGroup(undefined, group, totalFee * -1, session, mongoSession, `[CỐ ĐỊNH]Thanh toán buổi đánh cầu lông sân ${session.location} ngày ${formatDateVi(new Date)} (-${session.numberShuttlecock} cầu/ còn ${group.numberShuttlecock})`)
+      await paymentService.recordTransactionHistoryForGroup(undefined, group, totalFee * -1, session, mongoSession, `[CỐ ĐỊNH]Thanh toán buổi đánh cầu lông sân ${session.location} ngày ${formatDateVi(session.time)} (-${session.numberShuttlecock} cầu/ còn ${group.numberShuttlecock})`)
     }
     await group.save({ session: mongoSession })
 
