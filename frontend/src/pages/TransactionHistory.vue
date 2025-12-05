@@ -106,7 +106,6 @@ const totalCount = ref(0)
 const loading = ref(false)
 
 const headers: DataTableHeader[] = [
-  { title: 'Loại', key: 'type' },
   { title: 'Biến động', key: 'delta' },
   { title: 'Số dư sau', key: 'balanceAfter' },
   { title: 'Lý do', key: 'reason' },
