@@ -1,8 +1,8 @@
-import mongoose from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 import bcrypt from 'bcryptjs';
 
 export interface MemberDocument extends mongoose.Document {
-  _id: string;
+  _id: Types.ObjectId;
   name: string;
   balance: number;
   email: string;
