@@ -207,8 +207,13 @@ export const getTransactionHistoryByMemberId = async (req: Request, res: Respons
     const limit = parseInt(req.query.limit as string) || 10;
 
     // Build filter
-    const filter: any = { memberId };
-    filter.type = 'person'
+
+    const filter: any = { type: 'person' };
+
+    if (memberId) {
+      filter.memberId = memberId;
+    }
+
     if (startDate || endDate) {
       filter.createdAt = {};
       if (startDate) filter.createdAt.$gte = startDate;
