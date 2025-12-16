@@ -1,6 +1,6 @@
 import express from 'express';
 import { getMembers, addMember, getUserProfile, deleteMember, updateMember, restoreMember, getTransactionHistoryByMemberId } from '../controllers/memberController';
-import { login, register, refreshTokenHandler, logout, changePassword } from '../controllers/auth.controller';
+import { login, register, refreshTokenHandler, logout, changePassword, healthCheck } from '../controllers/auth.controller';
 import { acceptPayment, cancelPayment, createPayment, createPaymentForUser, getMyPayments } from '../controllers/paymentController';
 import { getBadmintonSessions, getAllMembersWithBalance, createBadmintonSession, updateBadmintonSession, payBadmintonSession, getTransactionHistoryByGroup, getTransactionHistoryByMember, getAllBadmintonSessions, confirmBadmintonSession } from '../controllers/badmintonSessionController';
 import asyncHandler from '../common/asyncHandler';
@@ -56,5 +56,7 @@ router.post('/badminton-teams', secureRoute('admin'), asyncHandler(createBadmint
 router.patch('/badminton-teams/:id/add-fees', secureRoute('lead', 'admin'), asyncHandler(updateBadmintonTeamFees));
 router.get('/badminton-teams/:id', secureRoute('lead', 'admin', 'user'), asyncHandler(getBadmintonTeamById));
 router.post('/badminton-teams/pay-shuttlecock', secureRoute('lead', 'admin'), asyncHandler(payForShuttlecockFee));
+
+router.get('/health', asyncHandler(healthCheck));
 
 export default router;

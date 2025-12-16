@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import router from './routes/routes';
 import cookieParser from 'cookie-parser';
-
+import keepAlive from "./scripts/keepAlive";
 dotenv.config();
 
 // Debug: Log environment variables
@@ -24,6 +24,11 @@ mongoose.connect(process.env.MONGODB_URI || '')
     console.log('✅ Đã kết nối MongoDB');
     app.listen(process.env.PORT || 8080, () => {
       console.log(`🚀 Server chạy tại http://localhost:${process.env.PORT}`);
+      if (process.env.NODE_ENV === 'production') {
+        keepAlive();
+      } else {
+        console.log('⚠️  Keep-alive disabled in development mode');
+      }
     });
   })
   .catch(err => console.error('❌ MongoDB lỗi:', err));

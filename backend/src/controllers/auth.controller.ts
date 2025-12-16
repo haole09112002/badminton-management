@@ -99,3 +99,15 @@ export const changePassword = async (req: AuthenticatedRequest, res: Response): 
     return new SuccessResponse("Thành công", { status: true }).send(res);
 };
 
+export const healthCheck = async (req: Request, res: Response) => {
+    try {
+        return new SuccessResponse('OK', {
+            status: 'OK',
+            timestamp: new Date().toISOString(),
+            uptime: process.uptime()
+        }).send(res);
+    } catch (err) {
+        console.error(err);
+        return new InternalErrorResponse().send(res);
+    }
+};
