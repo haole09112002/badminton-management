@@ -10,6 +10,7 @@ import TransactionHistory from '../pages/TransactionHistory.vue'
 import PaymentList from '../pages/PaymentList.vue'
 import LogoutPage from '../pages/LogoutPage.vue'
 import UserManagement from '../pages/UserManagement.vue'
+import SiteSetting from '../pages/SiteSetting.vue'
 import ChangePasswordPage from '../pages/ChangePasswordPage.vue'
 import PolicyPage from '../pages/PolicyPage.vue'
 import GalleryCarousel from '../pages/GalleryCarousel.vue' // hoặc '../pages/GalleryCarousel.vue'
@@ -26,6 +27,7 @@ const routes = [
       { path: 'transaction-history', name: 'TransactionHistory', component: TransactionHistory },
       { path: 'payments', name: 'PaymentList', component: PaymentList },
       { path: 'user-management', name: 'UserManagement', component: UserManagement },
+      { path: 'site-setting', name: 'SiteSetting', component: SiteSetting },
       { path: 'change-password', name: 'ChangePassword', component: ChangePasswordPage },
       { path: 'policy', name: 'Policy', component: PolicyPage },
       { path: 'logout', name: 'Logout', component: LogoutPage },

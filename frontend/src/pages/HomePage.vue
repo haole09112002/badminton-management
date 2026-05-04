@@ -128,7 +128,7 @@
           </div>
         </v-card-title>
         <v-card-text class="pa-0">
-          <v-data-table :headers="memberSeaders" :items="members" :loading="loading" density="comfortable"
+          <v-data-table :headers="memberSeaders" :items="membersWithPayment" :loading="loading" density="comfortable"
             :items-per-page="-1" :mobile-breakpoint="0" hide-default-footer class="members-table">
             <template #item.no="{ index }">
               <v-avatar size="32" color="primary" variant="tonal">
@@ -152,6 +152,23 @@
                   {{ item.balance > 0 ? 'mdi-arrow-up' : 'mdi-arrow-down' }}
                 </v-icon>
                 {{ formatCurrency(item.balance) }}
+              </v-chip>
+            </template>
+            <template #item.needToPay="{ item }">
+              <v-chip :color="item.needToPay > 0 ? 'error' : 'success'" variant="tonal" size="large">
+                <v-icon start size="small">
+                  {{ item.needToPay > 0 ? 'mdi-alert' : 'mdi-check' }}
+                </v-icon>
+                {{
+                  item.needToPay > 0
+                    ? formatCurrency(item.needToPay)
+                    : 'Đã đủ'
+                }}
+              </v-chip>
+            </template>
+            <template #item.needToSettle="{ item }">
+              <v-chip color="grey" variant="tonal" size="large">
+                0 ₫
               </v-chip>
             </template>
           </v-data-table>
@@ -267,6 +284,47 @@ const options = ref({
 });
 const team = ref<BadmintonTeamResponse>()
 const members = ref<Member[]>([])
+
+const siteConfig = ref<{ monthlyFee: number }>({
+  monthlyFee: 0
+})
+
+const fetchSiteConfig = async () => {
+  try {
+    const res = await api.get('/site-setting')
+    siteConfig.value = res.data
+  } catch (e) {
+    console.error('Lỗi fetch site config', e)
+  }
+}
+
+const isInRemindPeriod = computed(() => {
+  const start = siteConfig.value.remindStartDay
+  const end = siteConfig.value.remindEndDay
+
+  if (!start || !end) return false
+
+  const today = new Date().getDate()
+
+  return today >= start && today <= end
+})
+
+const membersWithPayment = computed(() => {
+  const monthlyFee = siteConfig.value.monthlyFee || 0
+
+  return members.value.map(member => {
+    const balance = member.balance ?? 0
+
+    const needToPay = Math.max(monthlyFee - balance, 0)
+
+    return {
+      ...member,
+      needToPay,
+      needToSettle: 0
+    }
+  })
+})
+
 const fetchTeam = async () => {
   try {
     const res = await appStore.getBadmintonTeamById(GROUP_ID)
@@ -330,15 +388,29 @@ const headers: DataTableHeader[] = [
   { title: 'Lý do', key: 'reason', align: 'start' },
   { title: 'Thời gian', key: 'createdAt', align: 'start' },
 ];
-const memberSeaders: DataTableHeader[] = [
-  { title: 'STT', key: 'no', align: 'start' },
-  { title: 'Tên', key: 'name', align: 'start' },
-  { title: 'Số dư', key: 'balance', align: 'start' },
-];
+const memberSeaders = computed<DataTableHeader[]>(() => {
+  const baseHeaders: DataTableHeader[] = [
+    { title: 'STT', key: 'no', align: 'start' },
+    { title: 'Tên', key: 'name', align: 'start' },
+    { title: 'Số dư', key: 'balance', align: 'start' },
+  ]
+
+  if (isInRemindPeriod.value) {
+    baseHeaders.push(
+      { title: 'Cần nộp ' + (formatCurrency(siteConfig.value.monthlyFee || 0)), key: 'needToPay', align: 'start' }
+    )
+  }
+
+  baseHeaders.push(
+    { title: 'Cần thanh toán', key: 'needToSettle', align: 'start' }
+  )
+
+  return baseHeaders
+})
 onMounted(async () => {
   try {
     isLoading.value = true
-    await Promise.all([appStore.getUserProfile(), fetchTeam(), fetchAllMemberBalance()])
+    await Promise.all([appStore.getUserProfile(), fetchTeam(), fetchAllMemberBalance(), fetchSiteConfig()])
     isLoading.value = false
   } catch (error) {
     isLoading.value = false
