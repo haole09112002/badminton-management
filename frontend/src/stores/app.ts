@@ -23,10 +23,17 @@ interface CreateUserRequest {
   balance?: number
 }
 
+
 export const useAppStore = defineStore('app', () => {
   // STATE
   const isLoading = ref(false)
   const user = ref<Member | null>(null)
+  // Snackbar state
+  const snackbar = ref<{ show: boolean; message: string; color: string }>({ show: false, message: '', color: 'success' })
+
+  function showSnackbar(message: string, color: 'success' | 'error' = 'success') {
+    snackbar.value = { show: true, message, color }
+  }
 
   // GETTERS
   const isLeadOrAdminPermission = computed(() => {
@@ -174,6 +181,8 @@ export const useAppStore = defineStore('app', () => {
     // state
     isLoading,
     user,
+    snackbar,
+    showSnackbar,
 
     // getters
     isLeadOrAdminPermission,

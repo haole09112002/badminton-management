@@ -1,3 +1,7 @@
+// import siteSettingRoutes from './siteSetting.routes';
+// router.use('/site-setting', siteSettingRoutes);
+import siteSettingRoutes from './siteSetting.routes';
+
 import express from 'express';
 import { getMembers, addMember, getUserProfile, deleteMember, updateMember, restoreMember, getTransactionHistoryByMemberId } from '../controllers/memberController';
 import { login, register, refreshTokenHandler, logout, changePassword, healthCheck } from '../controllers/auth.controller';
@@ -59,4 +63,5 @@ router.post('/badminton-teams/pay-shuttlecock', secureRoute('lead', 'admin'), as
 
 router.get('/health', asyncHandler(healthCheck));
 
+router.use('/site-setting', siteSettingRoutes);
 export default router;

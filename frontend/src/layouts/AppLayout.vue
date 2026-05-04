@@ -36,6 +36,9 @@
     <v-main class="main-content">
       <router-view :key="route.fullPath" />
     </v-main>
+    <v-snackbar v-model="appStore.snackbar.show" :color="appStore.snackbar.color" timeout="3000">
+      {{ appStore.snackbar.message }}
+    </v-snackbar>
   </v-app>
 </template>
 
@@ -58,6 +61,9 @@ const menuItems = computed(() => [
     : []),
   { to: '/transaction-history', icon: 'mdi-history', title: 'Biến động' },
   { to: '/payments', icon: 'mdi-credit-card', title: 'Nạp tiền' },
+  ...(appStore.isLeadOrAdminPermission
+    ? [{ to: '/site-setting', icon: 'mdi-cog', title: 'Cài đặt hệ thống' }]
+    : []),
   ...(appStore.isAdminPermission
     ? [{ to: '/user-management', icon: 'mdi-account-group', title: 'Quản lý người dùng' }]
     : []),
