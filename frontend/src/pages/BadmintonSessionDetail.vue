@@ -10,6 +10,9 @@
             <v-radio label="Sân cố định" value="fixed" density="compact"></v-radio>
             <v-radio label="Sân vãng lai" value="casual" density="compact"></v-radio>
           </v-radio-group>
+          <div v-if="isCreateMode" class="text-caption text-red mb-2" style="margin-bottom: 8px;">
+            Tiền sân sẽ bị trừ vào tài khoản nhóm ngay khi tạo buổi đánh.
+          </div>
           <TextFieldWithLabel v-model="location" label="Tên sân" :required="true" placeholder="King Sport..."
             :error-message="errors.location" @focus="errors.location = ''"
             :readonly="status === 'done' || status === 'confirmed' || !appStore.isLeadOrAdminPermission" />
@@ -30,8 +33,8 @@
           <div class="info-row">
             <MoneyInputWithLabel v-model="courtFee"
               :label="courtType === 'fixed' ? (isCreateMode ? 'Tổng tiền đặt cố định' : 'Tiên sân cố định') : 'Tiền sân'"
-              :readonly="status === 'done' || status === 'confirmed' || (courtType === 'fixed' && !isCreateMode)"
-              :error-message="errors.courtFee" @focus="errors.courtFee = ''" />
+              :readonly="status === 'done' || status === 'confirmed' || !isCreateMode" :error-message="errors.courtFee"
+              @focus="errors.courtFee = ''" />
             <MoneyInputWithLabel v-if="isCasualCourt" v-model="shuttlecockFee"
               :label="`Tổng tiền cầu (${formatCurrency((team?.shuttlecockFee ?? 0) / (team?.numberShuttlecock ?? 1))}/ 1 quả)`"
               :error-message="errors.shuttlecockFee" @focus="errors.shuttlecockFee = ''"
@@ -281,7 +284,11 @@
     </div>
     <v-dialog v-model="dialogCreate" max-width="500px">
       <v-card>
-        <v-card-title>Bạn có chắc chắn muốn tạo sân cố định</v-card-title>
+        <v-card-title>
+          Bạn có chắc chắn muốn tạo sân
+          <span v-if="courtType === 'fixed'">cố định</span>
+          <span v-else-if="courtType === 'casual'">vãng lai</span>
+        </v-card-title>
         <v-card-text class="d-flex flex-column">
           <span>
             Sân: {{ location }}
@@ -293,7 +300,7 @@
             Thời gian: {{ startTime }} - {{ endTime }}
           </span>
           <span>
-            Sẽ trừ vào tài khoản của nhóm: <span class="text-blue font-weight-bold">{{ formatCurrency(totalAmount)
+            Sẽ trừ vào tài khoản của nhóm: <span class="text-blue font-weight-bold">{{ formatCurrency(courtFee)
             }}</span>
           </span>
         </v-card-text>
@@ -682,7 +689,7 @@ function validateForm(): boolean {
     errors.value.time = 'Vui lòng chọn ngày';
     valid = false;
   }
-  if (courtType.value === 'fixed' && (team.value?.amount ?? 0) < courtFee.value) {
+  if ((courtType.value === 'fixed' || courtType.value === 'casual') && (team.value?.amount ?? 0) < courtFee.value) {
     errors.value.courtFee = "Tiền sân vượt quá tiền đang có của nhóm"
     valid = false;
   }
@@ -717,7 +724,7 @@ const handleCheckCreate = async (): Promise<void> => {
   if (!validateForm()) {
     return;
   }
-  if (isCreateMode && courtType.value === 'fixed' && !dialogCreate.value) {
+  if (isCreateMode && !dialogCreate.value) {
     dialogCreate.value = true;
   } else {
     await handleCreate();

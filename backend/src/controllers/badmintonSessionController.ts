@@ -382,7 +382,7 @@ export const updateBadmintonSession = async (req: Request, res: Response) => {
     session.startTime = startTime;
     session.endTime = endTime;
     session.location = location;
-    if (courtType !== 'fixed') session.courtFee = courtFee;
+    // if (courtType !== 'fixed') session.courtFee = courtFee;
     session.shuttlecockFee = shuttlecockFee;
     session.extraFee = extraFee;
     session.note = note;
@@ -485,7 +485,7 @@ export const confirmBadmintonSession = async (req: Request, res: Response) => {
     session.startTime = startTime;
     session.endTime = endTime;
     session.location = location;
-    if (courtType !== 'fixed') session.courtFee = courtFee;
+    // if (courtType !== 'fixed') session.courtFee = courtFee;
     session.shuttlecockFee = shuttlecockFee;
     session.extraFee = extraFee;
     session.note = note;
@@ -551,8 +551,12 @@ export const payBadmintonSession = async (req: Request, res: Response) => {
 
     // Trừ tiền từng thành viên (không đổi)
     for (const participant of session.participants) {
-      const member = members.find(m => m._id.toString() === participant.memberId.toString());
-      if (!member) continue;
+      const participantMemberId = participant.memberId.toString();
+      const member = members.find(m => m._id.toString() === participantMemberId);
+      if (!member) {
+        await mongoSession.abortTransaction();
+        return res.status(400).json({ message: `Không tìm thấy thành viên ${participantMemberId}` });
+      }
 
       const participantTotalFee = participant.courtFee + participant.shuttlecockFee + participant.extraFee + participant.modifiedFee;
       const subParticipantsTotalFee = participant.subParticipants?.reduce((sum, sub) =>
