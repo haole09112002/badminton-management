@@ -44,6 +44,10 @@
         <v-icon color="amber" size="18" class="mr-1">mdi-badminton</v-icon>
         <span>Tiền cầu: <b>{{ formatCurrency(item.shuttlecockFee) }}</b></span>
       </div>
+      <div class="info-row">
+        <v-icon color="amber" size="18" class="mr-1">mdi-badminton</v-icon>
+        <span>Số cầu: <b>{{ item.numberShuttlecock }}</b></span>
+      </div>
       <div class="info-row" v-if="item.extraFee !== 0">
         <v-icon color="grey" size="18" class="mr-1">mdi-currency-usd</v-icon>
         <span>Tiền khác: <b>{{ formatCurrency(item.extraFee) }}</b></span>

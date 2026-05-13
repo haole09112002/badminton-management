@@ -135,7 +135,12 @@ export const getAllBadmintonSessions = async (req: Request, res: Response) => {
       .populate('updateById', 'name')
       .sort({ time: -1 })
       .limit(20);
+
     const result = sessionList.map(m => {
+      const numberParticipant = m.participants.reduce(
+        (sum, p) => sum + 1 + (p.subParticipants ? p.subParticipants.length : 0),
+        0
+      );
       return {
         id: m.id,
         courtType: m.courtType,
@@ -145,14 +150,15 @@ export const getAllBadmintonSessions = async (req: Request, res: Response) => {
         location: m.location,
         courtFee: m.courtFee,
         shuttlecockFee: m.shuttlecockFee,
-        numberParticipant: m.participants.length,
+        numberParticipant: numberParticipant,
         participants: [],
         extraFee: m.extraFee ?? 0,
         note: m.note,
         status: m.status,
         updateTime: m.updateTime,
         updateById: m.updateById?._id?.toString() || "",
-        updateByName: (m.updateById as any)?.name || ""
+        updateByName: (m.updateById as any)?.name || "",
+        numberShuttlecock: m.numberShuttlecock
       } as BadmintonSessionResponse
     })
     return new SuccessResponse('Lấy thông tin buổi đánh thành công', result).send(res);
@@ -199,6 +205,12 @@ export const getBadmintonSessions = async (req: Request, res: Response) => {
         })) || []
       }
     })
+
+    const numberParticipant = session.participants.reduce(
+      (sum, p) => sum + 1 + (p.subParticipants ? p.subParticipants.length : 0),
+      0
+    );
+
     const result = {
       id: session.id,
       courtType: session.courtType,
@@ -208,7 +220,7 @@ export const getBadmintonSessions = async (req: Request, res: Response) => {
       location: session.location,
       courtFee: session.courtFee,
       shuttlecockFee: session.shuttlecockFee,
-      numberParticipant: session.participants.length,
+      numberParticipant: numberParticipant,
       participants: participantList,
       extraFee: session.extraFee,
       note: session.note,
@@ -216,7 +228,7 @@ export const getBadmintonSessions = async (req: Request, res: Response) => {
       updateTime: session.updateTime,
       updateById: session.updateById?._id?.toString() || "",
       updateByName: (session.updateById as any)?.name || "",
-      numberShuttlecock: session.numberShuttlecock
+      numberShuttlecock: session.numberShuttlecock // <-- Thêm dòng này
     } as unknown as BadmintonSessionResponse;
     return new SuccessResponse('Lấy thông tin buổi đánh thành công', result).send(res);
   } catch (err) {

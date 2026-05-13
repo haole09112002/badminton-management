@@ -18,6 +18,7 @@ export interface BadmintonSessionResponse {
     updateTime: Date
     updateById?: string
     updateByName?: string
+    numberShuttlecock?: number
 }
 
 
