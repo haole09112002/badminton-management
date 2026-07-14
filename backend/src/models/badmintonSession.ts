@@ -37,7 +37,8 @@ export interface BadmintonSession extends Document {
   updateTime: Date;
   updateById: MemberDocument;
   groupId: string
-  numberShuttlecock: number
+  numberShuttlecock: number;
+  passAmount?: number;
 }
 
 const badmintonSessionSchema = new Schema({
@@ -78,7 +79,8 @@ const badmintonSessionSchema = new Schema({
   updateTime: { type: Date, required: true, default: Date() },
   updateById: { type: mongoose.Schema.Types.ObjectId, ref: 'Member', required: false },
   groupId: { type: mongoose.Schema.Types.ObjectId, ref: 'BadmintonTeam', required: true },
-  numberShuttlecock: { type: Number, required: true, default: 0 }
+  numberShuttlecock: { type: Number, required: true, default: 0 },
+  passAmount: { type: Number, required: false, default: 0 }
 });
 
 const BadmintonSessionModel = mongoose.model<BadmintonSession>('BadmintonSession', badmintonSessionSchema);

@@ -6,7 +6,7 @@ import express from 'express';
 import { getMembers, addMember, getUserProfile, deleteMember, updateMember, restoreMember, getTransactionHistoryByMemberId } from '../controllers/memberController';
 import { login, register, refreshTokenHandler, logout, changePassword, healthCheck } from '../controllers/auth.controller';
 import { acceptPayment, cancelPayment, createPayment, createPaymentForUser, getMyPayments } from '../controllers/paymentController';
-import { getBadmintonSessions, getAllMembersWithBalance, createBadmintonSession, updateBadmintonSession, payBadmintonSession, getTransactionHistoryByGroup, getTransactionHistoryByMember, getAllBadmintonSessions, confirmBadmintonSession } from '../controllers/badmintonSessionController';
+import { getBadmintonSessions, getAllMembersWithBalance, createBadmintonSession, updateBadmintonSession, payBadmintonSession, getTransactionHistoryByGroup, getTransactionHistoryByMember, getAllBadmintonSessions, confirmBadmintonSession, passBadmintonSession } from '../controllers/badmintonSessionController';
 import asyncHandler from '../common/asyncHandler';
 import { secureRoute } from '../middlewares/secureRoute';
 import { createBadmintonTeam, updateBadmintonTeamFees, getBadmintonTeamById, payForShuttlecockFee } from '../controllers/badmintonTeam.controller';
@@ -44,6 +44,7 @@ router.post('/badminton-session', secureRoute('lead', 'admin'), asyncHandler(cre
 router.put('/badminton-session/:id', secureRoute('lead', 'admin', 'user'), asyncHandler(updateBadmintonSession));
 router.put('/badminton-session/:id/confirm', secureRoute('lead', 'admin'), asyncHandler(confirmBadmintonSession));
 router.put('/badminton-session/:id/pay', secureRoute('lead', 'admin'), asyncHandler(payBadmintonSession));
+router.put('/badminton-session/:id/pass', secureRoute('lead', 'admin'), asyncHandler(passBadmintonSession))
 router.get('/all-members-balance', secureRoute('lead', 'admin', 'user'), asyncHandler(getAllMembersWithBalance));
 
 router.get('/transactions/me', secureRoute('lead', 'admin', 'user'), asyncHandler(getTransactionHistoryByMember));

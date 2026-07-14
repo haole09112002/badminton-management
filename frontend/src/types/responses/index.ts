@@ -16,7 +16,8 @@ export interface BadmintonSession {
   updateByName: string,
   startTime: string,
   endTime: string
-  numberShuttlecock: number
+  numberShuttlecock: number,
+  passAmount?: number
 }
 
 export interface Participant {

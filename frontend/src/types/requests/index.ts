@@ -13,6 +13,10 @@ export interface BadmintonSessionRequest {
   numberShuttlecock: number
 }
 
+export interface PassBadmintonSessionRequest extends BadmintonSessionRequest {
+  courtFee: number;
+}
+
 export interface SubParticipant {
   name: string;
   isCourtFeeApplied: boolean;

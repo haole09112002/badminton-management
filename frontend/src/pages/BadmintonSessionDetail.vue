@@ -55,6 +55,10 @@
           <div class="info-row align-start">
             <TextAreaWithLabel v-model="note" label="Ghi chú"
               :readonly="status === 'done' || status === 'confirmed' || !appStore.isLeadOrAdminPermission" />
+            <div v-if="passAmount > 0 && status === 'done'" class="status-box">
+              <span>Đã Pass sân</span>
+              <span class="text-body-1 text-green bold">{{ formatCurrency(passAmount) }}</span>
+            </div>
             <div class="status-box">
               <span>Trạng thái</span>
               <StatusTag :status="status ?? ''" />
@@ -261,6 +265,10 @@
         <v-btn v-else :disabled="status === 'confirmed'" density="compact" elevation="4" @click="handleEdit">
           Cập nhật
         </v-btn>
+        <v-btn v-if="appStore.isLeadOrAdminPermission" :disabled="status !== 'edited' && status !== 'init'"
+          density="compact" elevation="4" @click="dialogPass = true">
+          Pass sân
+        </v-btn>
         <v-btn v-if="appStore.isLeadOrAdminPermission" :disabled="status !== 'edited' || grandTotal < totalAmount"
           density="compact" elevation="4" @click="dialogConfirm = true">
           Xác nhận
@@ -329,6 +337,24 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+    <v-dialog v-model="dialogPass" max-width="500px">
+      <v-card>
+        <v-card-title class="text-h5">Pass sân</v-card-title>
+        <v-card-text>
+          Nếu bạn "pass" thì sẽ không còn chỉnh sửa được nữa. Số tiền sẽ cộng vào tiền của nhóm. Bạn muốn tiếp tục?
+          <MoneyInputWithLabel v-model="passAmount" label="Số tiền pass*" class="mt-4" />
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="grey-darken-1" variant="text" @click="dialogPass = false">
+            Hủy
+          </v-btn>
+          <v-btn color="primary" variant="text" @click="handlePass" :disabled="passAmount <= 0">
+            Tiếp tục
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -358,6 +384,7 @@ interface SubParticipant {
 
 const dialogCreate = ref<boolean>(false);
 const dialogConfirm = ref<boolean>(false);
+const dialogPass = ref<boolean>(false);
 const courtType = ref<"fixed" | "casual">('fixed');
 const appStore = useAppStore()
 const route = useRoute()
@@ -370,6 +397,7 @@ const updateTime = ref<Date>();
 const updateByName = ref<string>("");
 const location = ref<string>("");
 const courtFee = ref<number>(0);
+const passAmount = ref<number>(0);
 const shuttlecockFee = ref<number>(0);
 const extraFee = ref<number>(0);
 const participants = ref<Participant[]>([])
@@ -648,6 +676,7 @@ onMounted(async () => {
         updateTime.value = new Date(badmintonSession.updateTime)
         updateByName.value = badmintonSession.updateByName
         numberShuttlecock.value = badmintonSession.numberShuttlecock
+        passAmount.value = badmintonSession.passAmount
       }
       isLoading.value = false
     }
@@ -960,6 +989,7 @@ const handlePay = async (): Promise<void> => {
 
     isLoading.value = true
     const createdSession = await appStore.payBadmintonSession(sessionId.value);
+    console.log('Pay session response:', createdSession);
     if (createdSession && createdSession._id) {
       status.value = createdSession?.status
       isLoading.value = false
@@ -1091,6 +1121,26 @@ const handleExpand = (participant: Participant, isExpanded: () => boolean, toggl
 // Update getMainRowIndex function to handle string type
 const getMainRowIndex = (memberId: string): number => {
   return participants.value.findIndex(p => p.memberId === memberId);
+};
+
+const handlePass = async (): Promise<void> => {
+  try {
+
+    isLoading.value = true
+    const param: PassBadmintonSessionRequest = {
+      courtFee: passAmount.value
+    }
+    const updatedSession = await appStore.passBadmintonSession(sessionId.value, param);
+    if (updatedSession && updatedSession._id) {
+      status.value = updatedSession?.status
+      isLoading.value = false
+      dialogPass.value = false
+      // navigationToDetailPage(createdSession._id)
+    }
+  } catch (error) {
+    isLoading.value = false
+    console.log(error)
+  }
 };
 
 </script>

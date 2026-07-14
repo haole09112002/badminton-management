@@ -9,6 +9,7 @@ import type {
 } from '../types'
 import type {
   BadmintonSessionRequest,
+  PassBadmintonSessionRequest,
   PaymentRequest,
   ShuttlecockFeeRequest
 } from '../types/requests'
@@ -92,6 +93,12 @@ export const useAppStore = defineStore('app', () => {
     const response = await api.put<ApiResponse<BadmintonSession>>(`/badminton-session/${sessionId}/pay`)
     return response.data.data
   }
+
+  async function passBadmintonSession(sessionId: string, param: PassBadmintonSessionRequest): Promise<BadmintonSession | null> {
+    const response = await api.put<ApiResponse<BadmintonSession>>(`/badminton-session/${sessionId}/pass`, param)
+    return response.data.data
+  }
+
 
   async function getAllMemberBalance(): Promise<MemberBalance[]> {
     const response = await api.get<ApiResponse<MemberBalance[]>>('/all-members-balance')
@@ -210,7 +217,8 @@ export const useAppStore = defineStore('app', () => {
     payForShuttlecockFee,
     getUserProfile,
     changePassword,
-    createPaymentForMember
+    createPaymentForMember,
+    passBadmintonSession
   }
 }, {
   persist: true

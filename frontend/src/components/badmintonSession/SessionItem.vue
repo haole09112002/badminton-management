@@ -29,6 +29,11 @@
     </div>
     <div class="session-info">
       <div class="info-row">
+        <v-chip v-if="item.passAmount > 0" color="green" class="chip-done" size="small" variant="elevated">
+          ĐÃ PASS: {{ formatCurrency(item.passAmount) }}
+        </v-chip>
+      </div>
+      <div class="info-row">
         <v-icon color="teal" size="18" class="mr-1">mdi-calendar</v-icon>
         <span>{{ formatDateVi(item.time) }}</span>
       </div>

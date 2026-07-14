@@ -5,13 +5,14 @@ import { BadmintonSessionModel, Participant, BadmintonSession } from '../models/
 import { BadmintonTeam } from '../models/BadmintonTeam';
 import { Member, MemberDocument } from '../models/Member';
 import { Payment } from '../models/payment';
-import { BadmintonSessionRequest, ParticipantRequest } from '../models/requests';
+import { BadmintonSessionRequest, ParticipantRequest, PassBadmintonSessionRequest } from '../models/requests';
 import { BadmintonSessionResponse, BadmintonSessionWaringResponse } from '../models/responses';
 import { TransactionHistory } from '../models/TransactionHistory';
 import paymentService from '../services/paymentService';
 import PaymentService from '../services/paymentService';
 import { formatDateVi } from '../utils/date';
 import { splitFeeEvenlyInt } from '../utils/money';
+import { console } from 'inspector';
 
 // Tạo buổi đánh cầu lông mới
 export const createBadmintonSession = async (req: Request, res: Response) => {
@@ -208,7 +209,8 @@ export const getAllBadmintonSessions = async (req: Request, res: Response) => {
         updateTime: m.updateTime,
         updateById: m.updateById?._id?.toString() || "",
         updateByName: (m.updateById as any)?.name || "",
-        numberShuttlecock: m.numberShuttlecock
+        numberShuttlecock: m.numberShuttlecock,
+        passAmount: m.passAmount,
       } as BadmintonSessionResponse
     })
     return new SuccessResponse('Lấy thông tin buổi đánh thành công', result).send(res);
@@ -277,7 +279,8 @@ export const getBadmintonSessions = async (req: Request, res: Response) => {
       updateTime: session.updateTime,
       updateById: session.updateById?._id?.toString() || "",
       updateByName: (session.updateById as any)?.name || "",
-      numberShuttlecock: session.numberShuttlecock // <-- Thêm dòng này
+      numberShuttlecock: session.numberShuttlecock,
+      passAmount: session.passAmount
     } as unknown as BadmintonSessionResponse;
 
     return new SuccessResponse('Lấy thông tin buổi đánh thành công', result).send(res);
@@ -770,3 +773,79 @@ export async function mapParticipantsRequestToParticipant(
     };
   });
 }
+
+export const passBadmintonSession = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { courtFee } = req.body as PassBadmintonSessionRequest;
+  const user = (req as any).user;
+
+  console.log("PASS BADMINTON SESSION", { id, courtFee, user });
+  if (!id) {
+    return new BadRequestResponse("Thiếu ID buổi đánh").send(res);
+  }
+  if (typeof courtFee !== 'number' || isNaN(courtFee) || courtFee < 0) {
+    return new BadRequestResponse("Phí sân không hợp lệ").send(res);
+  }
+
+  const mongoSession = await mongoose.startSession();
+
+  try {
+    mongoSession.startTransaction();
+
+    const session = await BadmintonSessionModel.findById(id).session(mongoSession);
+    if (!session) {
+      return new BadRequestResponse("Buổi đánh không tồn tại").send(res);
+    }
+    if (session.status !== 'init' && session.status !== 'edited') {
+      return new BadRequestResponse("Trang thai khong hop le").send(res);
+    }
+
+    const group = await BadmintonTeam.findById(session.groupId).session(mongoSession);
+    if (!group) {
+      return new NotFoundResponse("Không tìm thấy đội cầu lông").send(res);
+    }
+
+    session.status = 'done';
+    session.updateTime = new Date();
+    session.updateById = user.id;
+    session.passAmount = courtFee;
+    await session.save({ session: mongoSession });
+
+    await PaymentService.updateTeamBalance(group, courtFee, mongoSession);
+
+    await paymentService.recordTransactionHistoryForGroup(
+      undefined,
+      group,
+      courtFee,
+      session,
+      mongoSession,
+      `[PASS] buổi đánh cầu lông sân ${session.location} ngày ${formatDateVi(session.time)})`
+    );
+
+    await mongoSession.commitTransaction();
+
+
+
+    const confirmedSession = await BadmintonSessionModel.findById(session._id)
+      .populate('updateById', 'name')
+      .lean();
+
+    return new SuccessResponse('Pass thành công', {
+      ...confirmedSession,
+      updateById: confirmedSession?.updateById?._id?.toString() || "",
+      updateByName: (confirmedSession?.updateById as any)?.name || ""
+    }).send(res);
+
+  } catch (err: any) {
+    if (mongoSession.inTransaction()) {
+      await mongoSession.abortTransaction();
+    }
+    await mongoSession.abortTransaction();
+    console.error('TRANSACTION ERROR:', err);
+    if (err?.status === 400) return new BadRequestResponse(err.message).send(res);
+    if (err?.status === 404) return new NotFoundResponse(err.message).send(res);
+    return new InternalErrorResponse().send(res);
+  } finally {
+    mongoSession.endSession();
+  }
+};
