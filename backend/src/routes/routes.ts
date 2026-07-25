@@ -9,7 +9,7 @@ import { acceptPayment, cancelPayment, createPayment, createPaymentForUser, getM
 import { getBadmintonSessions, getAllMembersWithBalance, createBadmintonSession, updateBadmintonSession, payBadmintonSession, getTransactionHistoryByGroup, getTransactionHistoryByMember, getAllBadmintonSessions, confirmBadmintonSession, passBadmintonSession } from '../controllers/badmintonSessionController';
 import asyncHandler from '../common/asyncHandler';
 import { secureRoute } from '../middlewares/secureRoute';
-import { createBadmintonTeam, updateBadmintonTeamFees, getBadmintonTeamById, payForShuttlecockFee } from '../controllers/badmintonTeam.controller';
+import { createBadmintonTeam, updateBadmintonTeamFees, getBadmintonTeamById, payForShuttlecockFee, getSessionFeesByMember } from '../controllers/badmintonTeam.controller';
 
 const router = express.Router();
 
@@ -63,6 +63,7 @@ router.get('/badminton-teams/:id', secureRoute('lead', 'admin', 'user'), asyncHa
 router.post('/badminton-teams/pay-shuttlecock', secureRoute('lead', 'admin'), asyncHandler(payForShuttlecockFee));
 
 router.get('/health', asyncHandler(healthCheck));
+router.get('/share', asyncHandler(getSessionFeesByMember));
 
 router.use('/site-setting', siteSettingRoutes);
 export default router;

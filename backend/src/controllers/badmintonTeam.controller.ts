@@ -5,6 +5,7 @@ import mongoose, { ClientSession } from 'mongoose';
 import { BadRequestError } from '../common/apiError';
 import { ShuttlecockFeeRequest } from '../models/requests';
 import PaymentService from '../services/paymentService';
+import { BadmintonSessionModel } from '../models/badmintonSession';
 
 export const createBadmintonTeam = async (req: Request, res: Response) => {
     try {
@@ -121,6 +122,83 @@ export const payForShuttlecockFee = async (req: Request, res: Response) => {
         return new SuccessResponse('Thanh toán tiền cầu thành công', team).send(res);
     } catch (error) {
         console.error('Lỗi khi lấy chi tiết BadmintonTeam:', error);
+        return new InternalErrorResponse().send(res);
+    }
+};
+
+
+export const getSessionFeesByMember = async (req: Request, res: Response) => {
+    try {
+        const { groupId, memberId, status } = req.query;
+
+        if (!groupId || !memberId) {
+            return new BadRequestResponse("Thiếu groupId hoặc memberId").send(res);
+        }
+
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 10;
+        const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
+        const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+
+        const filter: any = {
+            groupId: new mongoose.Types.ObjectId(groupId as string),
+            status: status ?? 'done',
+            'participants.memberId': new mongoose.Types.ObjectId(memberId as string)
+        };
+
+        if (startDate || endDate) {
+            filter.time = {};
+            if (startDate) filter.time.$gte = startDate;
+            if (endDate) filter.time.$lte = endDate;
+        }
+
+        const totalCount = await BadmintonSessionModel.countDocuments(filter);
+
+        const sessions = await BadmintonSessionModel.find(filter)
+            .sort({ time: -1 })
+            .skip((page - 1) * limit)
+            .limit(limit)
+            .lean();
+
+        const result = sessions.map(session => {
+            const participant = session.participants.find(
+                p => p.memberId.toString() === memberId
+            );
+
+            if (!participant) return null;
+
+            const subTotal = participant.subParticipants?.reduce((sum, sub) =>
+                sum + sub.courtFee + sub.shuttlecockFee + sub.extraFee, 0) || 0;
+
+            const memberTotal = participant.courtFee + participant.shuttlecockFee
+                + participant.extraFee + participant.modifiedFee;
+
+            return {
+                sessionId: session._id,
+                date: session.time,
+                location: session.location,
+                memberTotal,
+                guests: participant.subParticipants?.map(sub => ({
+                    name: sub.name,
+                    total: sub.courtFee + sub.shuttlecockFee + sub.extraFee
+                })) || [],
+                total: memberTotal + subTotal
+            };
+        }).filter(Boolean);
+
+        const grandTotal = result.reduce((sum, s) => sum + (s?.total ?? 0), 0);
+
+        return new SuccessResponse('Lấy lịch sử phí theo trận thành công', {
+            page,
+            limit,
+            totalPages: Math.ceil(totalCount / limit),
+            totalCount,
+            grandTotal,
+            sessions: result,
+        }).send(res);
+
+    } catch (err) {
+        console.error('ERROR', err);
         return new InternalErrorResponse().send(res);
     }
 };
