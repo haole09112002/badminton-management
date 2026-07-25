@@ -15,6 +15,7 @@ import ChangePasswordPage from '../pages/ChangePasswordPage.vue'
 import PolicyPage from '../pages/PolicyPage.vue'
 import GalleryCarousel from '../pages/GalleryCarousel.vue' // hoặc '../pages/GalleryCarousel.vue'
 import SharePage from '../pages/SharePage.vue'
+import GroupMembersFee from '../pages/GroupMembersFee.vue'
 
 const routes = [
   {
@@ -42,6 +43,7 @@ const routes = [
   },
   { path: '/login', name: 'Login', component: LoginPage },
   { path: '/share', name: 'Share', component: SharePage },
+  { path: '/group-fees', name: 'GroupMembersFee', component: GroupMembersFee },
   // { path: '/register', name: 'Register', component: RegisterPage },
 
   { path: '/:pathMatch(.*)*', name: 'NotFound', component: NotFoundPage },
@@ -54,7 +56,7 @@ const router = createRouter({
 
 // Route Guard
 router.beforeEach((to, from, next) => {
-  if (to.name == "Share") {
+  if (to.name == "Share" || to.name == "GroupMembersFee") {
     return next()
   }
 

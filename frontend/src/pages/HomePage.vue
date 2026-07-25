@@ -102,6 +102,12 @@
                   </div>
                 </div>
               </v-expand-transition>
+              <!-- Nút Share -->
+              <v-divider class="my-4" />
+              <v-btn block color="primary" variant="tonal" prepend-icon="mdi-share-variant"
+                @click="navigateToGroupFees">
+                Xem tổng phí thành viên
+              </v-btn>
             </v-card-text>
           </v-card>
         </v-col>
@@ -512,6 +518,17 @@ const fetchTransactions = async () => {
   } finally {
     loading.value = false;
   }
+};
+
+const navigateToGroupFees = () => {
+  router.push({
+    path: '/group-fees',
+    query: {
+      groupId: team.value._id,
+      groupName: team.value.name,
+      status: 'confirmed'
+    }
+  });
 };
 </script>
 <style scoped>
