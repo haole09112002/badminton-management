@@ -51,7 +51,8 @@
                 <!-- Danh sách buổi -->
                 <v-list lines="two">
                     <template v-for="(session, index) in sessions" :key="session.sessionId">
-                        <v-list-item :href="`/sessions/${session.sessionId}`" target="_blank" active-color="primary">
+                        <v-list-item :href="`/badminton-session/${session.sessionId}`" target="_blank"
+                            active-color="primary">
                             <template #prepend>
                                 <v-avatar :color="status === 'confirmed' ? 'warning' : 'primary'" variant="tonal"
                                     size="40">
