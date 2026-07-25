@@ -25,7 +25,7 @@
                 <!-- Danh sách buổi -->
                 <v-list lines="two">
                     <template v-for="(session, index) in sessions" :key="session.sessionId">
-                        <v-list-item>
+                        <v-list-item :to="`/badminton-session/${session.sessionId}`" active-color="primary">
                             <template #prepend>
                                 <v-avatar color="primary" variant="tonal" size="40">
                                     <v-icon>mdi-badminton</v-icon>

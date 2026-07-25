@@ -54,6 +54,10 @@ const router = createRouter({
 
 // Route Guard
 router.beforeEach((to, from, next) => {
+  if (to.name == "Share") {
+    return next()
+  }
+
   const token = localStorage.getItem('accessToken')
   const role = localStorage.getItem('role')
 

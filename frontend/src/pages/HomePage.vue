@@ -413,7 +413,7 @@ const memberSeaders = computed<DataTableHeader[]>(() => {
   // )
 
   baseHeaders.push(
-    { title: 'Hành động', key: 'actions', align: 'start' }
+    { title: 'Xem nợ', key: 'actions', align: 'start' }
   )
 
   return baseHeaders
