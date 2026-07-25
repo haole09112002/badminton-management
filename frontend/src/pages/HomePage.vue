@@ -461,6 +461,7 @@ const navigateToShare = (member: any) => {
       groupId: team.value._id,
       memberId: member.id,
       memberName: member.name,
+      groupName: team.value.name,
       status: 'confirmed'
     }
   });

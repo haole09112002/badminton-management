@@ -1,11 +1,21 @@
 <template>
     <v-container class="d-flex justify-center mt-10">
         <v-card width="500" class="pa-6">
-            <v-card-subtitle v-if="memberName" class="mb-4">
-                <v-icon size="small" class="me-1">mdi-badminton</v-icon>
-                Lịch sử phí của <strong>{{ memberName }}</strong>
-            </v-card-subtitle>
+            <!-- Header -->
+            <div class="d-flex align-center mb-4">
+                <v-avatar color="primary" variant="tonal" size="48" class="me-3">
+                    <v-icon>mdi-account-group</v-icon>
+                </v-avatar>
+                <div>
+                    <v-card-title class="pa-0 text-h6">{{ memberName || 'Lịch sử phí' }}</v-card-title>
+                    <v-card-subtitle class="pa-0 text-body-6">
+                        <v-icon size="x-small" class="me-1">mdi-shield-account</v-icon>
+                        {{ groupName }}
+                    </v-card-subtitle>
+                </div>
+            </div>
 
+            <v-divider class="mb-4" />
             <v-alert v-if="errorMessage" type="error" class="mb-4">
                 {{ errorMessage }}
             </v-alert>
@@ -88,6 +98,7 @@ const groupId = urlParams.get('groupId') ?? '';
 const memberId = urlParams.get('memberId') ?? '';
 const status = urlParams.get('status') ?? 'done';
 const memberName = urlParams.get('memberName') ?? '';
+const groupName = urlParams.get('groupName') ?? '';
 
 const loading = ref(false);
 const errorMessage = ref('');
