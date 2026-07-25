@@ -166,10 +166,17 @@
                 }}
               </v-chip>
             </template>
-            <template #item.needToSettle="{ item }">
+            <!-- <template #item.needToSettle="{ item }">
               <v-chip color="grey" variant="tonal" size="large">
                 0 ₫
               </v-chip>
+            </template> -->
+            <!-- Cột share -->
+            <template #item.actions="{ item }">
+              <v-btn icon variant="text" color="primary" size="small" @click="navigateToShare(item)">
+                <v-icon>mdi-share-variant</v-icon>
+                <v-tooltip activator="parent" location="top">Chia sẻ lịch sử phí</v-tooltip>
+              </v-btn>
             </template>
           </v-data-table>
         </v-card-text>
@@ -401,8 +408,12 @@ const memberSeaders = computed<DataTableHeader[]>(() => {
     )
   }
 
+  // baseHeaders.push(
+  //   { title: 'Cần thanh toán', key: 'needToSettle', align: 'start' }
+  // )
+
   baseHeaders.push(
-    { title: 'Cần thanh toán', key: 'needToSettle', align: 'start' }
+    { title: 'Hành động', key: 'actions', align: 'start' }
   )
 
   return baseHeaders
@@ -442,6 +453,18 @@ const handleCreate = async () => {
     alert(error.response?.data?.message || error.message || 'Tạo payment thất bại')
   }
 }
+
+const navigateToShare = (member: any) => {
+  router.push({
+    path: '/share',
+    query: {
+      groupId: team.value._id,
+      memberId: member.id,
+      memberName: member.name,
+      status: 'confirmed'
+    }
+  });
+};
 
 const fetchAllMemberBalance = async () => {
   try {

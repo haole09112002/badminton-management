@@ -14,6 +14,7 @@ import SiteSetting from '../pages/SiteSetting.vue'
 import ChangePasswordPage from '../pages/ChangePasswordPage.vue'
 import PolicyPage from '../pages/PolicyPage.vue'
 import GalleryCarousel from '../pages/GalleryCarousel.vue' // hoặc '../pages/GalleryCarousel.vue'
+import SharePage from '../pages/SharePage.vue'
 
 const routes = [
   {
@@ -40,6 +41,7 @@ const routes = [
     ],
   },
   { path: '/login', name: 'Login', component: LoginPage },
+  { path: '/share', name: 'Share', component: SharePage },
   // { path: '/register', name: 'Register', component: RegisterPage },
 
   { path: '/:pathMatch(.*)*', name: 'NotFound', component: NotFoundPage },

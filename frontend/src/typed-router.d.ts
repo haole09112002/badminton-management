@@ -30,6 +30,7 @@ declare module 'vue-router/auto-routes' {
     '/PaymentList': RouteRecordInfo<'/PaymentList', '/PaymentList', Record<never, never>, Record<never, never>>,
     '/PolicyPage': RouteRecordInfo<'/PolicyPage', '/PolicyPage', Record<never, never>, Record<never, never>>,
     '/RegisterPage': RouteRecordInfo<'/RegisterPage', '/RegisterPage', Record<never, never>, Record<never, never>>,
+    '/SharePage': RouteRecordInfo<'/SharePage', '/SharePage', Record<never, never>, Record<never, never>>,
     '/SiteSetting': RouteRecordInfo<'/SiteSetting', '/SiteSetting', Record<never, never>, Record<never, never>>,
     '/TransactionHistory': RouteRecordInfo<'/TransactionHistory', '/TransactionHistory', Record<never, never>, Record<never, never>>,
     '/UserManagement': RouteRecordInfo<'/UserManagement', '/UserManagement', Record<never, never>, Record<never, never>>,
