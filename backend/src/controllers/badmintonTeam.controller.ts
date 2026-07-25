@@ -6,6 +6,7 @@ import { BadRequestError } from '../common/apiError';
 import { ShuttlecockFeeRequest } from '../models/requests';
 import PaymentService from '../services/paymentService';
 import { BadmintonSessionModel } from '../models/badmintonSession';
+import { Member } from '../models/Member';
 
 export const createBadmintonTeam = async (req: Request, res: Response) => {
     try {
@@ -195,6 +196,97 @@ export const getSessionFeesByMember = async (req: Request, res: Response) => {
             totalCount,
             grandTotal,
             sessions: result,
+        }).send(res);
+
+    } catch (err) {
+        console.error('ERROR', err);
+        return new InternalErrorResponse().send(res);
+    }
+};
+
+export const getGroupMembersFee = async (req: Request, res: Response) => {
+    try {
+        const { groupId, status } = req.query;
+
+        if (!groupId) {
+            return new BadRequestResponse("Thiếu groupId").send(res);
+        }
+
+        // Lấy tất cả session theo groupId và status
+        const filter: any = {
+            groupId: new mongoose.Types.ObjectId(groupId as string),
+            status: status ?? 'done',
+        };
+
+        const sessions = await BadmintonSessionModel.find(filter).lean();
+
+        // Map tiền theo từng memberId
+        const memberFeeMap = new Map<string, {
+            memberId: string;
+            totalCourtFee: number;
+            totalShuttlecockFee: number;
+            totalExtraFee: number;
+            totalModifiedFee: number;
+            totalGuestFee: number;
+            grandTotal: number;
+            sessionCount: number;
+        }>();
+
+        for (const session of sessions) {
+            for (const participant of session.participants) {
+                const memberId = participant.memberId.toString();
+
+                if (!memberFeeMap.has(memberId)) {
+                    memberFeeMap.set(memberId, {
+                        memberId,
+                        totalCourtFee: 0,
+                        totalShuttlecockFee: 0,
+                        totalExtraFee: 0,
+                        totalModifiedFee: 0,
+                        totalGuestFee: 0,
+                        grandTotal: 0,
+                        sessionCount: 0,
+                    });
+                }
+
+                const entry = memberFeeMap.get(memberId)!;
+                const guestFee = participant.subParticipants?.reduce((sum, sub) =>
+                    sum + sub.courtFee + sub.shuttlecockFee + sub.extraFee, 0) || 0;
+
+                entry.totalCourtFee += participant.courtFee;
+                entry.totalShuttlecockFee += participant.shuttlecockFee;
+                entry.totalExtraFee += participant.extraFee;
+                entry.totalModifiedFee += participant.modifiedFee ?? 0;
+                entry.totalGuestFee += guestFee;
+                entry.grandTotal += participant.courtFee + participant.shuttlecockFee
+                    + participant.extraFee + (participant.modifiedFee ?? 0) + guestFee;
+                entry.sessionCount += 1;
+            }
+        }
+
+        // Lấy thông tin tên member
+        const memberIds = Array.from(memberFeeMap.keys()).map(
+            id => new mongoose.Types.ObjectId(id)
+        );
+        const members = await Member.find({
+            _id: { $in: memberIds },
+            deletedAt: null
+        }).lean();
+
+        const memberNameMap = new Map(members.map(m => [m._id.toString(), m.name]));
+
+        const result = Array.from(memberFeeMap.values()).map(entry => ({
+            ...entry,
+            name: memberNameMap.get(entry.memberId) ?? 'Không rõ',
+        }));
+
+        // Tổng toàn group
+        const groupTotal = result.reduce((sum, m) => sum + m.grandTotal, 0);
+
+        return new SuccessResponse('Lấy tổng phí thành viên thành công', {
+            groupTotal,
+            memberCount: result.length,
+            members: result,
         }).send(res);
 
     } catch (err) {
