@@ -60,25 +60,48 @@
                                 </v-avatar>
                             </template>
 
-                            <v-list-item-title class="font-weight-medium d-flex align-center">
+                            <v-list-item-title class="font-weight-medium d-flex align-center gap-2">
                                 {{ member.name }}
                                 <v-chip v-if="member.memberId === memberId" size="x-small" color="primary"
                                     variant="tonal" class="ml-1">
                                     Bạn
                                 </v-chip>
+                                <v-chip v-if="status != 'done'" :color="member.balance >= 0 ? 'success' : 'error'"
+                                    size="x-small" variant="tonal">
+                                    {{ formatMoney(member.balance) }}
+                                </v-chip>
                             </v-list-item-title>
 
-                            <v-list-item-subtitle>
-                                <v-icon size="x-small" class="me-1">mdi-badminton</v-icon>
-                                {{ member.sessionCount }} buổi
+                            <v-list-item-subtitle class="mt-1">
+                                <div class="d-flex align-center gap-3">
+                                    <!-- Số buổi -->
+                                    <span>
+                                        <v-icon size="x-small" class="me-1">mdi-badminton</v-icon>
+                                        {{ member.sessionCount }} buổi
+                                    </span>
+                                </div>
                             </v-list-item-subtitle>
-
                             <template #append>
                                 <div class="d-flex align-center gap-2">
-                                    <span class="text-body-1 font-weight-bold"
-                                        :class="status === 'confirmed' ? 'text-warning' : 'text-primary'">
-                                        {{ formatMoney(member.grandTotal) }}
-                                    </span>
+                                    <div class="text-right">
+                                        <!-- Tổng phí -->
+                                        <div class="text-body-1 font-weight-bold"
+                                            :class="status === 'confirmed' ? 'text-warning' : 'text-primary'">
+                                            {{ formatMoney(member.grandTotal) }}
+                                        </div>
+                                        <!-- Còn thiếu / đã đủ -->
+
+                                        <div v-if="status != 'done'" class="text-caption">
+                                            <span
+                                                :class="member.balance >= member.grandTotal ? 'text-success' : 'text-error'">
+                                                {{
+                                                    member.balance >= member.grandTotal
+                                                        ? 'Đủ tiền'
+                                                        : `Thiếu ${formatMoney(member.grandTotal - member.balance)}`
+                                                }}
+                                            </span>
+                                        </div>
+                                    </div>
                                     <v-btn icon variant="text" color="primary" size="small"
                                         @click="navigateToShare(member)">
                                         <v-icon size="small">mdi-share-variant</v-icon>
