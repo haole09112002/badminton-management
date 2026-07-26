@@ -275,10 +275,14 @@ export const getGroupMembersFee = async (req: Request, res: Response) => {
 
         const memberNameMap = new Map(members.map(m => [m._id.toString(), m.name]));
 
-        const result = Array.from(memberFeeMap.values()).map(entry => ({
-            ...entry,
-            name: memberNameMap.get(entry.memberId) ?? 'Không rõ',
-        }));
+        const result = Array.from(memberFeeMap.values()).map(entry => {
+            const member = members.find(m => m._id.toString() === entry.memberId);
+            return {
+                ...entry,
+                name: member?.name ?? 'Không rõ',
+                balance: member?.balance ?? 0,  // ← thêm balance
+            };
+        });
 
         // Tổng toàn group
         const groupTotal = result.reduce((sum, m) => sum + m.grandTotal, 0);
